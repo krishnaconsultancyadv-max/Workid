@@ -178,9 +178,26 @@
     const expContainer = $('experienceContainer');
     let compCounter = 1;
 
+    // Fresher checkbox handling (Hide/Show AND Auto-Unlock Button)
     fresherCheck?.addEventListener('change', () => {
-      if (fresherCheck.checked) { expFields.style.display = 'none'; } 
-      else { expFields.style.display = 'block'; }
+      if (fresherCheck.checked) { 
+        expFields.style.display = 'none'; 
+        
+        // ✨ FRESHER LOGIC: Checkbox tick hote hi button ko active aur green kar do
+        $('initWorkIdBtn').disabled = false;
+        $('initWorkIdBtn').style.opacity = "1";
+        $('initWorkIdBtn').style.cursor = "pointer";
+        $('profileMsg').innerHTML = `<span style='color:#10B981;'>✓ Aapne Fresher select kiya hai. Aap bina HR approval ke apna WorkID Card instantly generate kar sakte hain!</span>`;
+      } 
+      else { 
+        expFields.style.display = 'block'; 
+        
+        // Agar uncheck kiya toh wapas normal flow (disabled) ho jaye jab tak save na kare
+        $('initWorkIdBtn').disabled = true;
+        $('initWorkIdBtn').style.opacity = "0.5";
+        $('initWorkIdBtn').style.cursor = "not-allowed";
+        $('profileMsg').textContent = "";
+      }
     });
 
     $('addMoreExpBtn')?.addEventListener('click', () => {
@@ -221,7 +238,14 @@
       };
 
       user.experiences = [];
-      if (!fresherCheck.checked) {
+      
+      if (fresherCheck.checked) {
+        // ✨ Freshers ke liye status direct Verified set kar dete hain taaki id generate ho jaye
+        user.verificationStatus = 'Verified';
+      } else {
+        // Experienced ke liye HR review pending rahega
+        user.verificationStatus = 'Pending Verification';
+        
         document.querySelectorAll('.experience-block').forEach(b => {
           const cName = b.querySelector('.expCompany').value.trim();
           if (cName) {
@@ -237,33 +261,38 @@
         });
       }
 
-      user.verificationStatus = 'Pending Verification';
       const idx = users.findIndex(u => u.id === user.id);
       users[idx] = user;
       setStore('users', users);
 
-      $('profileMsg').innerHTML = `✅ Profile & documents submitted to HR Server successfully!<br>Current Status: <span style='color:orange;'>Pending HR Verification</span>.`;
-      
-      // Keep card buttons disabled
-      $('initWorkIdBtn').disabled = true;
-      $('initWorkIdBtn').style.opacity = "0.5";
-      $('initWorkIdBtn').style.cursor = "not-allowed";
+      if (fresherCheck.checked) {
+        $('profileMsg').innerHTML = `<span style='color:#10B981;'>✅ Profile saved! Aapka Fresher status auto-verified hai. Niche 'Generate WorkID QR' button par click karein.</span>`;
+        $('initWorkIdBtn').disabled = false;
+        $('initWorkIdBtn').style.opacity = "1";
+        $('initWorkIdBtn').style.cursor = "pointer";
+      } else {
+        $('profileMsg').innerHTML = `✅ Profile & documents submitted to HR Server successfully!<br>Current Status: <span style='color:orange;'>Pending HR Verification</span>.`;
+        $('initWorkIdBtn').disabled = true;
+        $('initWorkIdBtn').style.opacity = "0.5";
+        $('initWorkIdBtn').style.cursor = "not-allowed";
+      }
     });
 
     $('initWorkIdBtn')?.addEventListener('click', () => {
       const users = getStore('users');
       const user = users.find(u => u.id === state.session.userId);
-      if (user && user.verificationStatus === 'Verified') {
+      
+      // Check if user is fresher OR officially verified
+      if (user && (user.profile?.isFresher || user.verificationStatus === 'Verified')) {
         user.workId = `WID-IN-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
         const idx = users.findIndex(u => u.id === user.id);
         users[idx] = user;
         setStore('users', users);
         
-        // Card rendering components push
         $('widName').textContent = user.profile.name || user.name;
         $('widNumber').textContent = user.workId;
-        $('widStatus').textContent = "Verified Live";
-        $('widStatus').style.background = "#10B981"; // Green
+        $('widStatus').textContent = user.profile?.isFresher ? "Verified (Fresher)" : "Verified Live";
+        $('widStatus').style.background = "#10B981"; 
         
         showView('workIdCard');
         alert("🎉 WorkID Card successfully generated based on verified profile records!");
@@ -272,7 +301,6 @@
       }
     });
 
-    // Download Alert Trigger
     $('downloadCardBtn')?.addEventListener('click', () => {
       alert("Downloading PNG Image Asset for your Verified WorkID secure container...");
     });
@@ -371,11 +399,17 @@
       
       // Local check if state matches verified token
       const currentStoredUser = getStore('users').find(u => u.id === state.session.userId);
-      if (currentStoredUser && currentStoredUser.verificationStatus === 'Verified') {
+      if (currentStoredUser && (currentStoredUser.profile?.isFresher || currentStoredUser.verificationStatus === 'Verified')) {
         $('initWorkIdBtn').disabled = false;
         $('initWorkIdBtn').style.opacity = "1";
         $('initWorkIdBtn').style.cursor = "pointer";
-        $('profileMsg').innerHTML = `<span style='color:#10B981;'>✓ Your profile has been officially VERIFIED by HR. Please generate your dynamic QR WorkID Card now.</span>`;
+        if (currentStoredUser.profile?.isFresher) {
+          $('isFresherCheck').checked = true;
+          $('experienceFields').style.display = 'none';
+          $('profileMsg').innerHTML = `<span style='color:#10B981;'>✓ Aapka Fresher status ready hai. Niche 'Generate WorkID QR' button par click karein.</span>`;
+        } else {
+          $('profileMsg').innerHTML = `<span style='color:#10B981;'>✓ Your profile has been officially VERIFIED by HR. Please generate your dynamic QR WorkID Card now.</span>`;
+        }
       }
     } else {
       showView('hrVerify');
