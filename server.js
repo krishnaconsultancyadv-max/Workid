@@ -1,127 +1,140 @@
 // server.js
+require('dotenv').config();
 const express = require('express');
-const { Pool } = require('pg');
 const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 4000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgres://workid:workid@db:5432/workid'
+// ======= TEMP IN-MEMORY "DB" (DEMO) =======
+let users = [];       // {id, role, name, email, mobile}
+let companies = [];   // {id, legalName, domain, cin, address, city, state, pin, verificationStatus}
+let feedback = [];    // {id, candidateWorkId, rating, text, hrEmail, createdAt}
+
+// ======= BASIC ROUTES =======
+
+// Health check
+app.get('/', (req, res) => {
+  res.json({ ok: true, app: 'WorkID backend demo' });
 });
 
-// helper: simple auth mock – future me token se replace karna
-async function getUserFromHeader(req) {
-  // front-end se temporary header: x-user-id: <uuid>
-  const userId = req.header('x-user-id');
-  if (!userId) return null;
-  const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-  return rows[0] || null;
-}
-
-/* ========== HR: POST JOB ========== */
-app.post('/api/jobs', async (req, res) => {
-  try {
-    const user = await getUserFromHeader(req);
-    if (!user || user.role !== 'hr') {
-      return res.status(401).json({ error: 'HR login required' });
-    }
-
-    const {
-      companyId, title, location,
-      skills, salaryRange, widStatusReq,
-      minRating, deadline
-    } = req.body;
-
-    const { rows } = await pool.query(
-      `INSERT INTO jobs
-       (companyid, title, location, skills, salary_range, wid_status_req, min_rating, deadline)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-       RETURNING *`,
-      [companyId, title, location, skills, salaryRange, widStatusReq || 'any', minRating || 0, deadline || null]
-    );
-
-    res.json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'failed_to_create_job' });
+// ---- Signup (very simple, no password hash yet) ----
+app.post('/api/auth/signup', (req, res) => {
+  const { role, name, email, mobile } = req.body;
+  if (!role || !name || !email || !mobile) {
+    return res.status(400).json({ error: 'role, name, email, mobile required' });
   }
-});
-
-/* ========== CANDIDATE: LIST JOBS ========== */
-app.get('/api/jobs', async (req, res) => {
-  try {
-    const { rows } = await pool.query(
-      `SELECT j.*, c.legalname AS company_name
-       FROM jobs j
-       LEFT JOIN companies c ON c.id = j.companyid
-       ORDER BY j.createdat DESC`
-    );
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'failed_to_list_jobs' });
+  const exists = users.find(u => u.email === email || u.mobile === mobile);
+  if (exists) {
+    return res.status(400).json({ error: 'User already exists' });
   }
+  const user = {
+    id: 'usr_' + Date.now(),
+    role,
+    name,
+    email,
+    mobile
+  };
+  users.push(user);
+  res.json({ user });
 });
 
-/* ========== CANDIDATE: APPLY TO JOB ========== */
-app.post('/api/jobs/:jobId/apply', async (req, res) => {
-  try {
-    const user = await getUserFromHeader(req);
-    if (!user || user.role !== 'candidate') {
-      return res.status(401).json({ error: 'Candidate login required' });
-    }
+// ---- List users (admin demo) ----
+app.get('/api/admin/users', (req, res) => {
+  res.json({ users });
+});
 
-    const jobId = req.params.jobId;
+// ---- HR: submit company for verification ----
+app.post('/api/hr/company', (req, res) => {
+  const {
+    legalName,
+    domain,
+    cin,
+    address,
+    city,
+    state,
+    pin,
+    hrEmail
+  } = req.body;
 
-    // check duplicate
-    const exists = await pool.query(
-      'SELECT 1 FROM job_applications WHERE jobid=$1 AND candidateid=$2',
-      [jobId, user.id]
-    );
-    if (exists.rowCount > 0) {
-      return res.status(400).json({ error: 'already_applied' });
-    }
-
-    const { rows } = await pool.query(
-      `INSERT INTO job_applications (jobid, candidateid)
-       VALUES ($1,$2) RETURNING *`,
-      [jobId, user.id]
-    );
-
-    res.json(rows[0]);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'failed_to_apply' });
+  if (!legalName || !domain || !address || !city || !state || !pin) {
+    return res.status(400).json({ error: 'Full address + legalName + domain required' });
   }
-});
 
-/* ========== HR: VIEW APPLICATIONS FOR A JOB ========== */
-app.get('/api/jobs/:jobId/applications', async (req, res) => {
-  try {
-    const user = await getUserFromHeader(req);
-    if (!user || user.role !== 'hr') {
-      return res.status(401).json({ error: 'HR login required' });
-    }
-
-    const jobId = req.params.jobId;
-
-    const { rows } = await pool.query(
-      `SELECT a.*, u.email, u.profile, u.workid
-       FROM job_applications a
-       JOIN users u ON u.id = a.candidateid
-       WHERE a.jobid = $1
-       ORDER BY a.appliedat DESC`,
-      [jobId]
-    );
-
-    res.json(rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'failed_to_get_applications' });
+  // Correct 6-digit PIN validation
+  if (!/^d{6}$/.test(String(pin))) {
+    return res.status(400).json({ error: 'PIN code must be 6 digits' });
   }
+
+  const company = {
+    id: 'cmp_' + Date.now(),
+    legalName,
+    domain,
+    cin: cin || '',
+    address,
+    city,
+    state,
+    pin: String(pin),
+    verificationStatus: 'pending',
+    hrEmail: hrEmail || null
+  };
+
+  companies.push(company);
+  res.json({ company });
 });
 
-const port = process.env.PORT || 4000;
-app.listen(port, () => console.log('API running on ' + port));
+// ---- HR: list own companies (simple filter by hrEmail) ----
+app.get('/api/hr/companies', (req, res) => {
+  const hrEmail = req.query.hrEmail;
+  if (!hrEmail) {
+    return res.status(400).json({ error: 'hrEmail query param required' });
+  }
+  const my = companies.filter(c => c.hrEmail === hrEmail);
+  res.json({ companies: my });
+});
+
+// ---- HR: submit feedback (with basic guards) ----
+app.post('/api/hr/feedback', (req, res) => {
+  const { workId, rating, text, hrEmail } = req.body;
+
+  if (!workId || !rating || !text || !hrEmail) {
+    return res.status(400).json({ error: 'workId, rating, text, hrEmail required' });
+  }
+  if (text.length < 40) {
+    return res.status(400).json({ error: 'Feedback must be at least 40 characters' });
+  }
+  const numRating = Number(rating);
+  if (numRating < 1 || numRating > 5) {
+    return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+  }
+
+  const fb = {
+    id: 'fb_' + Date.now(),
+    candidateWorkId: workId,
+    rating: numRating,
+    text,
+    hrEmail,
+    createdAt: new Date().toISOString()
+  };
+  feedback.push(fb);
+  res.json({ feedback: fb });
+});
+
+// ---- Candidate: get all feedback for a WorkID ----
+app.get('/api/candidate/feedback', (req, res) => {
+  const workId = req.query.workId;
+  if (!workId) {
+    return res.status(400).json({ error: 'workId query param required' });
+  }
+  const list = feedback.filter(f => f.candidateWorkId === workId);
+  res.json({ feedback: list });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`WorkID demo backend running on port ${PORT}`);
+});
