@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WorkID – Admin Hierarchy + Forgot Password Demo</title>
+  <style>
+    body{
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:#020617; color:#e5e7eb; margin:0; padding:20px;
+    }
+    h2,h3{margin-top:0;}
+    .layout{display:flex;flex-wrap:wrap;gap:16px;}
+    .card{
+      background:#0f172a;border-radius:12px;padding:16px 20px;
+      min-width:280px;max-width:520px;box-sizing:border-box;
+    }
+    label{display:block;margin-top:8px;font-size:13px;}
+    input,select{
+      width:100%;padding:8px;margin-top:4px;border-radius:8px;
+      border:1px solid #334155;background:#020617;color:#e5e7eb;
+      box-sizing:border-box;
+    }
+    button{
+      margin-top:12px;padding:8px 14px;border-radius:999px;border:none;
+      background:#2563eb;color:white;cursor:pointer;font-size:13px;
+    }
+    button.outline{background:transparent;border:1px solid #4b5563;}
+    button.small{padding:6px 10px;font-size:12px;}
+    .link-btn{
+      background:none;border:none;color:#60a5fa;padding:0;
+      margin-top:8px;cursor:pointer;font-size:12px;text-decoration:underline;
+    }
+    .muted{font-size:12px;color:#9ca3af;}
+    .row{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+    .badge{
+      display:inline-block;padding:2px 8px;border-radius:999px;
+      font-size:11px;background:#1e293b;color:#e5e7eb;
+    }
+    .badge.ok{background:#16a34a33;color:#bbf7d0;}
+    .badge.danger{background:#b91c1c33;color:#fecaca;}
+    pre{
+      background:#020617;padding:8px;border-radius:8px;
+      font-size:11px;overflow:auto;
+    }
+    .hidden{display:none;}
+    ul{padding-left:18px;font-size:13px;}
+    table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+    th,td{border:1px solid #1f2937;padding:4px 6px;text-align:left;}
+    th{background:#020617;}
+  </style>
+</head>
+<body>
+  <h2>WorkID – Super / State / District Admin + Password Reset (Demo)</h2>
+  <p class="muted">
+    Frontend demo of hierarchical admins (super, state, district) with invite-based signup and a basic "forgot password" flow. [web:531][web:583]
+  </p>
+
+ <!-- BACK TO MAIN WORKID LINK -->
+  <div class="row">
+    <a href="index.html" class="btn-outline small">Back to WorkID</a>
+  </div>
+
+  <div class="layout">
+    <!-- AUTH + RESET + INVITE SIGNUP -->
+    <section class="card" style="flex:1 1 280px;">
+      <h3>Sign in</h3>
+
+      <label>Role</label>
+      <select id="authRole">
+        <option value="super_admin">Super Admin</option>
+        <option value="state_admin">State Admin</option>
+        <option value="district_admin">District Admin</option>
+      </select>
+
+      <label>Email</label>
+      <input id="authEmail" type="email" placeholder="founder@workid.in">
+
+      <label>Password</label>
+      <input id="authPass" type="password" placeholder="password">
+
+      <div class="row">
+        <button id="loginBtn">Login</button>
+        <button id="logoutBtn" class="outline small">Logout</button>
+      </div>
+
+      <button id="showForgotBtn" class="link-btn">Forgot password?</button>
+      <p id="authMsg" class="muted"></p>
+
+      <!-- Forgot password request -->
+      <div id="forgotPanel" class="hidden" style="margin-top:12px;">
+        <h4>Request password reset</h4>
+        <p class="muted">
+          Enter your admin email; demo generates a reset token you can paste below.
+        </p>
+        <label>Email</label>
+        <input id="fpEmail" type="email" placeholder="admin@workid.in">
+        <button id="fpRequestBtn" class="small">Generate reset token</button>
+        <div id="fpTokenBlock" class="hidden">
+          <p class="muted">Demo reset link (normally email se aata):</p>
+          <pre id="fpTokenBox"></pre>
+        </div>
+        <p id="fpMsg" class="muted"></p>
+      </div>
+
+      <!-- Reset password -->
+      <div id="resetPanel" style="margin-top:16px;">
+        <h4>Complete password reset</h4>
+        <label>Reset token</label>
+        <input id="rpToken" type="text">
+        <label>New password</label>
+        <input id="rpNewPass" type="password">
+        <button id="rpSubmitBtn" class="small">Reset password</button>
+        <p id="rpMsg" class="muted"></p>
+      </div>
+
+      <hr style="border-color:#1f2937;margin:16px 0;">
+
+      <h4>Invite signup (State / District Admin)</h4>
+      <p class="muted">Open via emailed link with <code>?token=XYZ&amp;role=state_admin</code> or paste token.</p>
+
+      <label>Invite token</label>
+      <input id="invTokenInput" type="text" placeholder="auto-filled from URL">
+
+      <label>Full name</label>
+      <input id="invName" type="text">
+
+      <label>Email</label>
+      <input id="invEmail" type="email">
+
+      <label>Password</label>
+      <input id="invPass" type="password">
+
+      <button id="completeInviteBtn" class="outline small">Complete Admin Signup</button>
+      <p id="inviteMsg" class="muted"></p>
+    </section>
+
+    <!-- SUPER ADMIN PANEL -->
+    <section class="card hidden" id="superAdminPanel" style="flex:1 1 320px;">
+      <div class="row">
+        <h3 style="margin-right:8px;">Super Admin Panel</h3>
+        <span class="badge danger">ALL INDIA</span>
+      </div>
+      <p class="muted">Manage all states and state admins.</p>
+
+      <h4>States (demo)</h4>
+      <ul id="saStateList"></ul>
+
+      <h4>Create State Admin Invite</h4>
+      <label>Select state</label>
+      <select id="saStateSelect"></select>
+
+      <label>Admin email</label>
+      <input id="saInviteEmailState" type="email" placeholder="mp.admin@workid.in">
+
+      <button id="saCreateStateInviteBtn" class="small">Generate state admin invite</button>
+
+      <div id="saStateInviteBlock" class="hidden">
+        <p class="muted">Link for state admin (demo, one-time):</p>
+        <pre id="saStateInviteLinkBox"></pre>
+      </div>
+
+      <h4 style="margin-top:16px;">Current State Admins</h4>
+      <div id="saStateAdminsList" class="muted">No state admins yet.</div>
+    </section>
+
+    <!-- STATE ADMIN PANEL -->
+    <section class="card hidden" id="stateAdminPanel" style="flex:1 1 320px;">
+      <div class="row">
+        <h3 style="margin-right:8px;">State Admin Panel</h3>
+        <span class="badge ok">STATE LEVEL</span>
+      </div>
+      <p class="muted">Manage districts, companies and district admins in your state.</p>
+
+      <div class="row">
+        <span>Logged in: <span id="stLabelEmail" class="badge"></span></span>
+        <span class="badge">state: <span id="stLabelState"></span></span>
+      </div>
+
+      <h4 style="margin-top:12px;">Permissions</h4>
+      <ul id="stPermList"></ul>
+
+      <h4>Districts in your state</h4>
+      <table>
+        <thead><tr><th>District</th><th>Companies</th></tr></thead>
+        <tbody id="stDistrictBody"></tbody>
+      </table>
+
+      <h4 style="margin-top:12px;">Create District Admin Invite</h4>
+      <label>Select district</label>
+      <select id="stDistrictSelect"></select>
+
+      <label>Admin email</label>
+      <input id="stInviteEmail" type="email" placeholder="sagar.admin@workid.in">
+
+      <button id="stCreateInviteBtn" class="small">Generate district admin invite</button>
+
+      <div id="stInviteBlock" class="hidden">
+        <p class="muted">Link for district admin (demo, one-time):</p>
+        <pre id="stInviteLinkBox"></pre>
+      </div>
+
+      <h4 style="margin-top:12px;">District Admins in your state</h4>
+      <div id="stDistrictAdminsList" class="muted">No district admins yet.</div>
+    </section>
+
+    <!-- DISTRICT ADMIN PANEL -->
+    <section class="card hidden" id="districtAdminPanel" style="flex:1 1 320px;">
+      <div class="row">
+        <h3 style="margin-right:8px;">District Admin Panel</h3>
+        <span class="badge ok">DISTRICT LEVEL</span>
+      </div>
+      <p class="muted">Manage companies and HR approvals in your district.</p>
+
+      <div class="row">
+        <span>Logged in: <span id="daLabelEmail" class="badge"></span></span>
+        <span class="badge">district: <span id="daLabelDistrict"></span></span>
+      </div>
+
+      <h4 style="margin-top:12px;">Permissions</h4>
+      <ul id="daPermList"></ul>
+
+      <h4>Companies in your district</h4>
+      <table>
+        <thead><tr><th>Company</th><th>State</th></tr></thead>
+        <tbody id="daCompanyBody"></tbody>
+      </table>
+
+      <h4 style="margin-top:12px;">HR accounts in your district</h4>
+      <table>
+        <thead><tr><th>HR ID</th><th>Company</th><th>Status</th></tr></thead>
+        <tbody id="daHrBody"></tbody>
+      </table>
+      <button id="daApproveAllBtn" class="small">Approve all pending HR (demo)</button>
+    </section>
+  </div>
+
+  <script>
+    // ==== DEMO DATA ====
+    const db = {
+      states: [
+        { id:'st_mp',  name:'Madhya Pradesh' },
+        { id:'st_mh',  name:'Maharashtra' }
+      ],
+      districts: [
+        { id:'dist_bhopal', name:'Bhopal', stateId:'st_mp' },
+        { id:'dist_sagar',  name:'Sagar',  stateId:'st_mp' },
+        { id:'dist_indore', name:'Indore', stateId:'st_mp' },
+        { id:'dist_pune',   name:'Pune',   stateId:'st_mh' },
+        { id:'dist_mumbai', name:'Mumbai', stateId:'st_mh' }
+      ],
+      companies: [
+        { id:'cmp_1', name:'Krishna Consultancy',   districtId:'dist_bhopal' },
+        { id:'cmp_2', name:'Sagar Security',        districtId:'dist_sagar'  },
+        { id:'cmp_3', name:'RK Travels HR',         districtId:'dist_sagar'  },
+        { id:'cmp_4', name:'Indore Logistics',      districtId:'dist_indore' },
+        { id:'cmp_5', name:'Pune IT Services',      districtId:'dist_pune'   },
+        { id:'cmp_6', name:'Mumbai Staffing Co.',   districtId:'dist_mumbai' }
+      ],
+      users: [
+        { id:'u1', email:'founder@workid.in', password:'super123',
+          role:'super_admin', stateId:null, districtId:null }
+      ],
+      hrAccounts: [
+        { id:'hr_101', companyId:'cmp_1', status:'pending' },
+        { id:'hr_102', companyId:'cmp_2', status:'pending' },
+        { id:'hr_103', companyId:'cmp_3', status:'approved' },
+        { id:'hr_104', companyId:'cmp_4', status:'pending' },
+        { id:'hr_105', companyId:'cmp_5', status:'pending' },
+        { id:'hr_106', companyId:'cmp_6', status:'approved' }
+      ],
+      invites: {},      // inviteToken -> { email, role, stateId?, districtId?, used }
+      resetTokens: {},  // resetToken  -> { email, expiresAt }
+      stateAdminPerms: [
+        'view_state_dashboard',
+        'view_districts_in_state',
+        'view_companies_in_state',
+        'create_district_admin_invites',
+        'view_state_reports'
+      ],
+      districtAdminPerms: [
+        'view_district_dashboard',
+        'view_companies_in_district',
+        'view_users_and_hr_in_district',
+        'approve_hr_accounts_in_district'
+      ]
+    };
+
+    let currentUser = null;
+    const $ = (id) => document.getElementById(id);
+
+    // ==== RENDER HELPERS ====
+    function renderStateList(){
+      const ul = $('saStateList');
+      const sel = $('saStateSelect');
+      ul.innerHTML = ''; sel.innerHTML = '';
+      db.states.forEach(s => {
+        const dCount = db.districts.filter(d => d.stateId === s.id).length;
+        const cCount = db.companies.filter(c => {
+          const d = db.districts.find(dd => dd.id === c.districtId);
+          return d && d.stateId === s.id;
+        }).length;
+        const li = document.createElement('li');
+        li.textContent = `${s.name} – districts: ${dCount}, companies: ${cCount}`;
+        ul.appendChild(li);
+
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = s.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderStateAdmins(){
+      const box = $('saStateAdminsList');
+      const admins = db.users.filter(u => u.role === 'state_admin');
+      if(!admins.length){
+        box.textContent = 'No state admins yet.';
+        return;
+      }
+      const table = document.createElement('table');
+      table.innerHTML = `<thead><tr><th>Email</th><th>State</th></tr></thead><tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+      admins.forEach(a => {
+        const s = db.states.find(s => s.id === a.stateId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${a.email}</td><td>${s ? s.name : '-'}</td>`;
+        tbody.appendChild(tr);
+      });
+      box.innerHTML = ''; box.appendChild(table);
+    }
+
+    function renderDistrictsForStateAdmin(){
+      if(!currentUser || currentUser.role !== 'state_admin') return;
+      const tbody = $('stDistrictBody');
+      const sel   = $('stDistrictSelect');
+      tbody.innerHTML = ''; sel.innerHTML = '';
+      const dists = db.districts.filter(d => d.stateId === currentUser.stateId);
+      dists.forEach(d => {
+        const cCount = db.companies.filter(c => c.districtId === d.id).length;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${d.name}</td><td>${cCount}</td>`;
+        tbody.appendChild(tr);
+
+        const opt = document.createElement('option');
+        opt.value = d.id; opt.textContent = d.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    function renderDistrictAdminsForState(){
+      if(!currentUser || currentUser.role !== 'state_admin') return;
+      const box = $('stDistrictAdminsList');
+      const admins = db.users.filter(u => u.role === 'district_admin');
+      const my = admins.filter(a => {
+        const d = db.districts.find(d => d.id === a.districtId);
+        return d && d.stateId === currentUser.stateId;
+      });
+      if(!my.length){
+        box.textContent = 'No district admins yet for your state.';
+        return;
+      }
+      const table = document.createElement('table');
+      table.innerHTML = `<thead><tr><th>Email</th><th>District</th></tr></thead><tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+      my.forEach(a => {
+        const d = db.districts.find(d => d.id === a.districtId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${a.email}</td><td>${d ? d.name : '-'}</td>`;
+        tbody.appendChild(tr);
+      });
+      box.innerHTML = ''; box.appendChild(table);
+    }
+
+    function renderDistrictPanelData(){
+      if(!currentUser || currentUser.role !== 'district_admin') return;
+      const companyBody = $('daCompanyBody');
+      const hrBody      = $('daHrBody');
+      companyBody.innerHTML = ''; hrBody.innerHTML = '';
+
+      const myCompanies = db.companies.filter(c => c.districtId === currentUser.districtId);
+      myCompanies.forEach(c => {
+        const d = db.districts.find(d => d.id === c.districtId);
+        const s = db.states.find(s => s.id === d.stateId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${c.name}</td><td>${s ? s.name : '-'}</td>`;
+        companyBody.appendChild(tr);
+      });
+
+      const hrRows = db.hrAccounts.filter(h => myCompanies.some(c => c.id === h.companyId));
+      hrRows.forEach(h => {
+        const c = db.companies.find(c => c.id === h.companyId);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${h.id}</td><td>${c ? c.name : '-'}</td><td>${h.status}</td>`;
+        hrBody.appendChild(tr);
+      });
+    }
+
+    function render(){
+      const saPanel = $('superAdminPanel');
+      const stPanel = $('stateAdminPanel');
+      const daPanel = $('districtAdminPanel');
+      const authMsg = $('authMsg');
+
+      if(!currentUser){
+        saPanel.classList.add('hidden');
+        stPanel.classList.add('hidden');
+        daPanel.classList.add('hidden');
+        authMsg.textContent = 'Not logged in.';
+        return;
+      }
+
+      authMsg.textContent = `Logged in as ${currentUser.email} (${currentUser.role}).`;
+
+      if(currentUser.role === 'super_admin'){
+        saPanel.classList.remove('hidden');
+        stPanel.classList.add('hidden');
+        daPanel.classList.add('hidden');
+      } else if(currentUser.role === 'state_admin'){
+        stPanel.classList.remove('hidden');
+        saPanel.classList.add('hidden');
+        daPanel.classList.add('hidden');
+
+        $('stLabelEmail').textContent = currentUser.email;
+        const s = db.states.find(s => s.id === currentUser.stateId);
+        $('stLabelState').textContent = s ? s.name : '-';
+
+        const permList = $('stPermList');
+        permList.innerHTML = '';
+        db.stateAdminPerms.forEach(p => {
+          const li = document.createElement('li');
+          li.textContent = p;
+          permList.appendChild(li);
+        });
+
+        renderDistrictsForStateAdmin();
+        renderDistrictAdminsForState();
+      } else if(currentUser.role === 'district_admin'){
+        daPanel.classList.remove('hidden');
+        saPanel.classList.add('hidden');
+        stPanel.classList.add('hidden');
+
+        $('daLabelEmail').textContent = currentUser.email;
+        const d = db.districts.find(d => d.id === currentUser.districtId);
+        $('daLabelDistrict').textContent = d ? d.name : '-';
+
+        const permList = $('daPermList');
+        permList.innerHTML = '';
+        db.districtAdminPerms.forEach(p => {
+          const li = document.createElement('li');
+          li.textContent = p;
+          permList.appendChild(li);
+        });
+
+        renderDistrictPanelData();
+      }
+    }
+
+    // ==== AUTH ====
+    $('loginBtn').addEventListener('click', () => {
+      const role  = $('authRole').value;
+      const email = $('authEmail').value.trim();
+      const pass  = $('authPass').value;
+
+      const user = db.users.find(u => u.email === email && u.password === pass && u.role === role);
+      if(!user){
+        $('authMsg').textContent = 'Invalid credentials or role.';
+        currentUser = null;
+      } else {
+        currentUser = user;
+      }
+      render();
+    });
+
+    $('logoutBtn').addEventListener('click', () => {
+      currentUser = null;
+      render();
+    });
+
+    // ==== FORGOT PASSWORD REQUEST ====
+    $('showForgotBtn').addEventListener('click', () => {
+      $('forgotPanel').classList.toggle('hidden');
+    });
+
+    $('fpRequestBtn').addEventListener('click', () => {
+      const email = $('fpEmail').value.trim();
+      if(!email){
+        $('fpMsg').textContent = 'Enter your admin email.';
+        return;
+      }
+      const exists = db.users.some(u => u.email === email);
+      const msg = 'If an account exists for this email, a reset link has been generated (demo).'; // [web:580][web:583]
+
+      if(exists){
+        const token = Math.random().toString(36).slice(2,12);
+        const expires = Date.now() + 1000*60*15;
+        db.resetTokens[token] = { email, expiresAt: expires };
+        const baseUrl = 'https://workid.example.com/reset';
+        const link = `${baseUrl}?token=${token}`;
+        $('fpTokenBox').textContent = link;
+        $('fpTokenBlock').classList.remove('hidden');
+      }
+      $('fpMsg').textContent = msg;
+    });
+
+    // ==== COMPLETE RESET ====
+    $('rpSubmitBtn').addEventListener('click', () => {
+      const token   = $('rpToken').value.trim();
+      const newPass = $('rpNewPass').value;
+      if(!token || !newPass){
+        $('rpMsg').textContent = 'Token and new password are required.';
+        return;
+      }
+      const rec = db.resetTokens[token];
+      if(!rec){
+        $('rpMsg').textContent = 'Invalid or expired token.';
+        return;
+      }
+      if(rec.expiresAt < Date.now()){
+        $('rpMsg').textContent = 'Reset token expired.';
+        delete db.resetTokens[token];
+        return;
+      }
+      const user = db.users.find(u => u.email === rec.email);
+      if(!user){
+        $('rpMsg').textContent = 'Account not found for this token.';
+        delete db.resetTokens[token];
+        return;
+      }
+      user.password = newPass;
+      delete db.resetTokens[token];
+      $('rpMsg').textContent = 'Password updated. Now login with your new password.';
+    });
+
+    // ==== SUPER ADMIN: CREATE STATE ADMIN INVITE ====
+    $('saCreateStateInviteBtn').addEventListener('click', () => {
+      if(!currentUser || currentUser.role !== 'super_admin'){
+        alert('Only super admin can create state admins.');
+        return;
+      }
+      const stateId = $('saStateSelect').value;
+      const email   = $('saInviteEmailState').value.trim();
+      if(!stateId || !email){
+        alert('Select state and enter email.');
+        return;
+      }
+      const token = Math.random().toString(36).slice(2,10);
+      db.invites[token] = { email, role:'state_admin', stateId, used:false };
+
+      const baseUrl = 'https://workid.example.com/workid-admin-demo.html';
+      const link = `${baseUrl}?token=${token}&email=${encodeURIComponent(email)}&role=state_admin&stateId=${encodeURIComponent(stateId)}`;
+      $('saStateInviteLinkBox').textContent = link;
+      $('saStateInviteBlock').classList.remove('hidden');
+
+      renderStateAdmins();
+    });
+
+    // ==== STATE ADMIN: CREATE DISTRICT ADMIN INVITE ====
+    $('stCreateInviteBtn').addEventListener('click', () => {
+      if(!currentUser || currentUser.role !== 'state_admin'){
+        alert('Only state admin can create district admins for their state.');
+        return;
+      }
+      const districtId = $('stDistrictSelect').value;
+      const email      = $('stInviteEmail').value.trim();
+      if(!districtId || !email){
+        alert('Select district and enter email.');
+        return;
+      }
+      const d = db.districts.find(d => d.id === districtId);
+      if(!d || d.stateId !== currentUser.stateId){
+        alert('District must belong to your state.');
+        return;
+      }
+      const token = Math.random().toString(36).slice(2,10);
+      db.invites[token] = { email, role:'district_admin', districtId, used:false };
+
+      const baseUrl = 'https://workid.example.com/workid-admin-demo.html';
+      const link = `${baseUrl}?token=${token}&email=${encodeURIComponent(email)}&role=district_admin&districtId=${encodeURIComponent(districtId)}`;
+      $('stInviteLinkBox').textContent = link;
+      $('stInviteBlock').classList.remove('hidden');
+    });
+
+    // ==== INVITE SIGNUP (STATE OR DISTRICT ADMIN) ====
+    const params      = new URLSearchParams(window.location.search);
+    const urlToken    = params.get('token');
+    const urlEmail    = params.get('email');
+    if(urlToken) $('invTokenInput').value = urlToken;
+    if(urlEmail) $('invEmail').value      = urlEmail;
+
+    $('completeInviteBtn').addEventListener('click', () => {
+      const token = $('invTokenInput').value.trim();
+      const name  = $('invName').value.trim();
+      const email = $('invEmail').value.trim();
+      const pass  = $('invPass').value;
+
+      if(!token || !name || !email || !pass){
+        $('inviteMsg').textContent = 'All fields and invite token are required.';
+        return;
+      }
+      const invite = db.invites[token];
+      if(!invite){
+        $('inviteMsg').textContent = 'Invalid invite token.';
+        return;
+      }
+      if(invite.used){
+        $('inviteMsg').textContent = 'This invite has already been used.';
+        return;
+      }
+      if(invite.email && invite.email !== email){
+        $('inviteMsg').textContent = 'Email does not match invite.';
+        return;
+      }
+
+      const id = 'adm_' + Date.now();
+      const user = {
+        id, email, password:pass, role: invite.role,
+        stateId:null, districtId:null, name
+      };
+      if(invite.role === 'state_admin'){
+        user.stateId = invite.stateId;
+      } else if(invite.role === 'district_admin'){
+        user.districtId = invite.districtId;
+      }
+      db.users.push(user);
+      invite.used = true;
+
+      $('inviteMsg').textContent = `Account created (${invite.role}). Now login with that role from Sign in.`;
+      renderStateAdmins();
+      renderDistrictAdminsForState();
+    });
+
+    // ==== DISTRICT ADMIN: APPROVE HR ACCOUNTS ====
+    $('daApproveAllBtn').addEventListener('click', () => {
+      if(!currentUser || currentUser.role !== 'district_admin'){
+        alert('Only district admin can approve HR accounts.');
+        return;
+      }
+      const myCompanies = db.companies
+        .filter(c => c.districtId === currentUser.districtId)
+        .map(c => c.id);
+      let count = 0;
+      db.hrAccounts.forEach(h => {
+        if(myCompanies.includes(h.companyId) && h.status === 'pending'){
+          h.status = 'approved';
+          count++;
+        }
+      });
+      renderDistrictPanelData();
+      alert(`Approved ${count} pending HR accounts in your district (demo).`);
+    });
+
+    // ==== INITIAL RENDER ====
+    renderStateList();
+    renderStateAdmins();
+    render();
+  </script>
+</body>
+</html>

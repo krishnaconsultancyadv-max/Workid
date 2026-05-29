@@ -1,0 +1,367 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Poppins:wght@500;700&display=swap');
+
+:root {
+  --primary: #1E40AF;
+  --accent: #3B82F6;
+  --bg: #F9FAFB;
+  --text: #111827;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --radius: 12px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+h1, h2, h3 {
+  font-family: 'Poppins', sans-serif;
+  margin-bottom: 12px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  padding: 16px;
+  margin-bottom: 16px;
+  transition: all 0.2s ease-in-out;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar li {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.sidebar li:hover {
+  background: var(--bg);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-family: inherit;
+  transition: all 0.2s ease-in-out;
+}
+input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+  outline: none;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #4b5563;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.btn {
+  background: var(--primary);
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s ease;
+}
+.btn:hover {
+  background: #1D4ED8;
+}
+
+.btn-secondary {
+  background: #111827;
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-secondary:hover {
+  background: #1f2937;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-outline:hover {
+  background: var(--bg);
+}
+
+.small {
+  padding: 6px 10px;
+  font-size: 0.85rem;
+}
+
+.appbar {
+  background: var(--primary);
+  color: white;
+  padding: 12px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.subtitle {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.muted {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.otp {
+  width: 160px;
+  letter-spacing: 2px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+.item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--card);
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #10B981;
+  color: white;
+  font-size: 0.8rem;
+}
+
+.preview {
+  background: linear-gradient(135deg, #1E40AF, #3B82F6);
+  color: white;
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#widNumber {
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+#widStatus {
+  margin-top: 6px;
+}
+#qrBox canvas {
+  background: white;
+  border-radius: 8px;
+}
+
+/* PROFILE PHOTO PREVIEW – SQUARE */
+.photo-preview {
+  margin-top: 8px;
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1f3f6;
+  border: 1px solid #dde1e7;
+}
+.photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* WORKID CARD + PHOTO – SQUARE */
+.wid-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+.wid-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.wid-photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+}
+
+/* PASSWORD + EYE ICON */
+.password-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.password-wrap input {
+  flex: 1;
+}
+.eye-btn {
+  border: none;
+  background: transparent;
+  padding: 6px;
+  border-radius: 999px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.eye-btn:hover {
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* DARK MODE */
+.dark body {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.dark .card {
+  background: #1e293b;
+  border-color: #334155;
+}
+.dark input, .dark select, .dark textarea {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+.dark .appbar {
+  background: #1e293b;
+  border-color: #334155;
+}
+.dark .sidebar li:hover {
+  background: #0b1320;
+}
+.dark .btn {
+  background: #3B82F6;
+}
+.dark .btn:hover {
+  background: #2563EB;
+}
+
+/* ===================== */
+/*  RESPONSIVE LAYOUT   */
+/* ===================== */
+
+/* Mobile: jo abhi hai, usko hi base rakha hai */
+
+/* Tablet (>= 768px) */
+@media (min-width: 768px) {
+  body {
+    background: #e5e7eb;
+  }
+
+  .container {
+    max-width: 1000px;
+    margin: 32px auto;
+  }
+
+  /* Dashboard layout: sidebar + main */
+  .grid-2 {
+    grid-template-columns: 260px 1fr;
+    align-items: flex-start;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 80px;
+  }
+
+  .card {
+    border-radius: 14px;
+  }
+
+  /* Form grids thoda spacious */
+  .grid {
+    gap: 14px 18px;
+  }
+}
+
+/* Desktop (>= 1024px) */
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1160px;
+    margin: 40px auto;
+    padding: 0 24px;
+  }
+
+  .card {
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+
+  .grid {
+    gap: 18px 22px;
+  }
+
+  /* Login / auth pages center */
+  .auth-page .card {
+    max-width: 480px;
+    margin: 40px auto;
+  }
+}
