@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
 </head>
 <body>
-  <!-- Top App Bar -->
   <header class="appbar">
     <div class="brand">
       <span class="logo">WorkID</span>
@@ -25,7 +24,6 @@
   </header>
 
   <main class="container">
-    <!-- AUTH CARD -->
     <section class="card">
       <h2>WorkID Access</h2>
 
@@ -35,7 +33,6 @@
         <button id="tabForgot" class="btn-outline small auth-tab">Forgot</button>
       </div>
 
-      <!-- LOGIN BOX -->
       <div id="authLoginBox">
         <div class="grid">
           <div>
@@ -79,7 +76,6 @@
         </div>
       </div>
 
-      <!-- SIGNUP BOX -->
       <div id="authSignupBox" class="hidden">
         <div class="grid">
           <div>
@@ -112,122 +108,70 @@
           </div>
         </div>
 
-        <!-- ENTREPRENEUR EXTRA FIELDS (show when entrepreneur selected) -->
         <div id="entSection" class="grid hidden">
-          <!-- Basic Business Info -->
           <div>
             <label>Business Legal Name <span class="required">*</span></label>
-            <input id="entBusinessName" type="text" placeholder="Exact legal name" required />
+            <input id="entBusinessName" type="text" placeholder="Exact legal name" />
           </div>
           <div>
             <label>GST Number <span class="required">*</span></label>
-            <input id="entGst" type="text" placeholder="15ABCDE1234F1Z5" maxlength="15" required />
+            <input id="entGst" type="text" placeholder="15ABCDE1234F1Z5" maxlength="15" />
           </div>
-          
-          <!-- Business Category -->
           <div>
             <label>Business Category <span class="required">*</span></label>
-            <select id="entBusinessCategory" required>
+            <select id="entBusinessCategory">
               <option value="">Select Category</option>
-              <option value="hospitality">🏨 Hospitality (Hotel, Restaurant, Cafe)</option>
-              <option value="medical">🏥 Medical (Clinic, Hospital, Pharmacy)</option>
-              <option value="retail">🛒 Retail (Shop, Supermarket, Electronics)</option>
-              <option value="trading">📦 Trading/Wholesale</option>
+              <option value="hospitality">🏨 Hospitality</option>
+              <option value="medical">🏥 Medical</option>
+              <option value="retail">🛒 Retail</option>
+              <option value="trading">📦 Trading</option>
               <option value="manufacturing">🏭 Manufacturing</option>
-              <option value="services">💼 Services (Salon, Gym, Coaching)</option>
-              <option value="education">📚 Education/Coaching</option>
-              <option value="transport">🚗 Transport/Logistics</option>
+              <option value="services">💼 Services</option>
+              <option value="education">📚 Education</option>
               <option value="it">💻 IT/Software</option>
-              <option value="construction">🏗️ Construction</option>
-              <option value="other">📋 Other</option>
             </select>
           </div>
-          
-          <!-- Business Size -->
           <div>
             <label>Business Size <span class="required">*</span></label>
-            <select id="entBusinessSize" required>
+            <select id="entBusinessSize">
               <option value="micro">Micro (<10 employees)</option>
               <option value="small">Small (10-50 employees)</option>
-              <option value="medium">Medium (50-250 employees)</option>
-              <option value="large">Large (>250 employees)</option>
             </select>
           </div>
-          
-          <!-- Registration -->
           <div>
             <label>Registration Type <span class="required">*</span></label>
-            <select id="entRegType" required>
+            <select id="entRegType">
               <option value="proprietorship">Proprietorship</option>
-              <option value="partnership">Partnership</option>
               <option value="pvtltd">Private Limited</option>
-              <option value="llp">LLP</option>
-              <option value="shopact">Shop & Establishment</option>
-              <option value="msme">MSME/Udyam</option>
             </select>
           </div>
           <div>
             <label>Registration No. <span class="required">*</span></label>
-            <input id="entRegNumber" type="text" placeholder="CIN/MSME/Shop Act No." required />
+            <input id="entRegNumber" type="text" placeholder="CIN/Registration No." />
           </div>
-          
-          <!-- Address -->
           <div>
             <label>Registered Address <span class="required">*</span></label>
-            <input id="entAddress" type="text" placeholder="Street/Area/Landmark" required />
+            <input id="entAddress" type="text" placeholder="Address" />
           </div>
           <div>
             <label>City <span class="required">*</span></label>
-            <input id="entCity" type="text" required />
+            <input id="entCity" type="text" />
           </div>
           <div>
             <label>State <span class="required">*</span></label>
-            <input id="entState" type="text" required />
+            <input id="entState" type="text" />
           </div>
           <div>
             <label>PIN Code <span class="required">*</span></label>
-            <input id="entPin" type="text" maxlength="6" required />
-          </div>
-          
-          <!-- Contact -->
-          <div>
-            <label>Official Email <span class="required">*</span></label>
-            <input id="entDomainEmail" type="email" placeholder="hr@yourcompany.com" required />
-          </div>
-          <div>
-            <label>Annual Turnover <span class="required">*</span></label>
-            <select id="entTurnover" required>
-              <option value="">Select</option>
-              <option value="0-10L">0-10 Lakh</option>
-              <option value="10-50L">10-50 Lakh</option>
-              <option value="50L-1Cr">50L-1 Crore</option>
-              <option value="1-5Cr">1-5 Crore</option>
-              <option value="5Cr+">5 Cr+</option>
-            </select>
-          </div>
-          
-          <!-- Documents -->
-          <div class="row full-width">
-            <label>Documents <span class="required">*</span></label>
-            <div class="doc-grid">
-              <div><label>GST Certificate</label><input id="entGstFile" type="file" accept=".pdf,.jpg,.jpeg,.png" /></div>
-              <div><label>Registration/License <span class="required">*</span></label><input id="entLicenseFile" type="file" accept=".pdf,.jpg,.jpeg,.png" required /></div>
-              <div><label>Address Proof</label><input id="entAddrProof" type="file" accept=".pdf,.jpg,.jpeg,.png" /></div>
-            </div>
+            <input id="entPin" type="text" maxlength="6" />
           </div>
         </div>
-
-        <p id="entHelp" class="muted hidden">
-          <strong>Required:</strong> GST, Registration, License doc, complete address. 
-          <strong>Max 5MB per file.</strong>
-        </p>
 
         <div class="row">
           <button id="signupBtn" class="btn">Create Account</button>
         </div>
       </div>
 
-      <!-- FORGOT PASSWORD BOX - FULLY FUNCTIONAL -->
       <div id="authForgotBox" class="hidden">
         <p class="muted">Password reset via OTP - Demo mode.</p>
         <div class="grid">
@@ -244,39 +188,33 @@
           <button id="forgotBtn" class="btn">Send Reset OTP</button>
         </div>
         
-        <!-- RESET FORM (shows after OTP sent) -->
         <div id="resetOtpSection" class="row" style="display:none; gap:8px; margin-top:16px; flex-wrap:wrap;">
           <input id="resetOtpInput" type="text" class="otp" placeholder="6-digit OTP" maxlength="6" />
           <input id="newPasswordInput" type="password" placeholder="New password (min 6)" />
           <input id="newPasswordConfirm" type="password" placeholder="Confirm password" />
           <button id="resetPasswordBtn" class="btn-secondary small">Reset Password</button>
         </div>
-        
         <p id="resetMsg" class="muted" style="margin-top:8px;"></p>
       </div>
 
       <p id="authMsg" class="muted"></p>
     </section>
 
-    <!-- DASHBOARD -->
     <section class="grid-2" id="dashboard" style="display:none;">
-      <!-- Sidebar -->
       <nav class="sidebar card">
         <h3>Dashboard</h3>
         <ul id="navList"></ul>
       </nav>
 
-      <!-- Content (all panels here) -->
       <section class="content">
-        <!-- Entrepreneur Panel -->
         <div id="entrepreneurPanel" class="card hidden">
           <h3>Entrepreneur Dashboard</h3>
           <p class="muted">Manage business profile, jobs, and HR tools.</p>
         </div>
 
-        <!-- Candidate Profile -->
         <div id="candidateProfile" class="card hidden">
-          <h3>Candidate Profile</h3>
+          <h3>Candidate Resume Details</h3>
+          
           <div class="grid">
             <div><label>Full name</label><input id="cName" type="text" /></div>
             <div><label>Father's name</label><input id="cFather" type="text" /></div>
@@ -285,447 +223,91 @@
             <div><label>Address</label><input id="cAddr" type="text" /></div>
             <div><label>Phone</label><input id="cPhone" type="tel" /></div>
             <div><label>Email</label><input id="cEmail" type="email" /></div>
-            <div><label>Qualification</label><input id="cQual" type="text" /></div>
+            <div><label>Highest Qualification</label><input id="cQual" type="text" placeholder="e.g. B.Tech, MBA, 12th" /></div>
           </div>
-          <div class="row">
-            <label>Document</label><input id="cDoc" type="file" accept=".pdf,image/*" />
+          
+          <div class="row pt-2 pb-2" style="background:#2d3748; padding: 10px; margin: 15px 0; border-radius:6px;">
+            <label style="display:inline-flex; align-items:center; gap:8px; cursor:pointer;">
+              <input type="checkbox" id="isFresherCheck" style="transform: scale(1.3);" />
+              <strong>I am a Fresher (Maine pehle kahin job nahi ki hai)</strong>
+            </label>
           </div>
-          <div class="row">
-            <button id="saveProfileBtn" class="btn">Save Profile</button>
-            <button id="initWorkIdBtn" class="btn-secondary">Generate WorkID QR</button>
-          </div>
-          <p id="profileMsg" class="muted"></p>
-        </div>
 
-        <!-- WorkID Card -->
-        <div id="workIdCard" class="card hidden">
-          <h3>WorkID Card</h3>
-          <div class="card preview">
-            <div class="wid-row">
-              <div>
-                <div class="wid-title" id="widName">Name</div>
-                <div class="wid-sub" id="widNumber">WID-IN-YYYY-000000</div>
-                <div class="badge" id="widStatus">Unverified</div>
+          <div id="experienceFields" class="space-y-4">
+            <div style="display:flex; justify-content:between; align-items:center; margin-bottom:10px;">
+              <h4 style="margin:0;">Pichli Employment details (Experience History)</h4>
+              <button type="button" id="addMoreExpBtn" class="btn small" style="background:#4a5568; font-size:12px;">➕ Add More Experience</button>
+            </div>
+            
+            <div id="experienceContainer">
+              <div class="experience-block" style="border:1px solid #4a5568; padding:15px; border-radius:6px; margin-bottom:15px;">
+                <h5 class="comp-title">Company #1</h5>
+                <div class="grid">
+                  <div><label>Company Name</label><input class="expCompany" type="text" /></div>
+                  <div><label>Designation/Role</label><input class="expRole" type="text" /></div>
+                  <div><label>Joining Date</label><input class="expStart" type="date" /></div>
+                  <div><label>Relieving Date</label><input class="expEnd" type="date" /></div>
+                </div>
+                <div class="grid" style="margin-top:10px;">
+                  <div><label>Relieving Letter</label><input class="expRelieveDoc" type="file" accept=".pdf,image/*" /></div>
+                  <div><label>No Dues Certificate</label><input class="expNoDuesDoc" type="file" accept=".pdf,image/*" /></div>
+                </div>
               </div>
-              <div id="qrBox"></div>
             </div>
           </div>
-          <div class="row">
+
+          <div class="row border-t" style="margin-top:15px; padding-top:15px;">
+            <label>Upload Latest Resume <span style="color:red;">*</span></label>
+            <input id="cDoc" type="file" accept=".pdf,image/*" />
+          </div>
+          
+          <div class="row mt-2">
+            <button id="saveProfileBtn" class="btn">Submit Resume to HR for Verification</button>
+            <button id="initWorkIdBtn" class="btn-secondary" disabled style="opacity:0.5; cursor:not-allowed;">Generate WorkID QR</button>
+          </div>
+          <p id="profileMsg" class="muted" style="font-weight:bold; color:#ecc94b;"></p>
+        </div>
+
+        <div id="workIdCard" class="card hidden">
+          <h3>WorkID Card</h3>
+          <div class="card preview" style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); border-radius:12px; padding:20px; color:white;">
+            <div class="wid-row" style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div class="wid-title" id="widName" style="font-size:22px; font-weight:bold;">Name</div>
+                <div class="wid-sub" id="widNumber" style="font-family:monospace; margin-top:5px;">WID-IN-YYYY-000000</div>
+                <div class="badge" id="widStatus" style="background:red; color:white; padding:4px 8px; border-radius:4px; display:inline-block; margin-top:10px; font-size:12px;">Unverified</div>
+              </div>
+              <div id="qrBox" style="background:white; pading:5px; border-radius:6px; width:80px; height:80px; display:flex; align-items:center; justify-content:center; color:black; font-size:10px; font-weight:bold;">QR CODE</div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:15px;">
             <button id="downloadCardBtn" class="btn">Download PNG</button>
             <button id="copyWorkIdBtn" class="btn-secondary">Copy WorkID</button>
             <button id="shareWorkIdBtn" class="btn-outline">Share</button>
           </div>
         </div>
 
-        <!-- Employment History -->
-        <div id="employmentHistory" class="card hidden">
-          <h3>Employment History</h3>
-          <div class="grid">
-            <div><label>Company</label><input id="eCompany" type="text" /></div>
-            <div><label>Job title</label><input id="eTitle" type="text" /></div>
-            <div><label>Start date</label><input id="eStart" type="date" /></div>
-            <div><label>End date</label><input id="eEnd" type="date" /></div>
-            <div><label>HR name</label><input id="eHrName" type="text" /></div>
-            <div><label>HR email</label><input id="eHrEmail" type="email" /></div>
-            <div><label>HR phone</label><input id="eHrPhone" type="tel" /></div>
-          </div>
-          <div class="row">
-            <label>Documents</label><input id="eDoc" type="file" accept=".pdf,image/*" />
-          </div>
-          <div class="row">
-            <button id="addClaimBtn" class="btn">Add Employment</button>
-          </div>
-          <div id="claimsList" class="list"></div>
+        <div id="hrVerify" class="card hidden">
+          <h3>HR Candidate Verification Centre</h3>
+          <p class="muted">Niche candidates ki list hai jo verification ka wait kar rahe hain unhe check karke approve karein.</p>
+          
+          <div id="hrCandidatesReviewList" class="list" style="margin-top:15px; display:flex; flex-direction:column; gap:15px;">
+            </div>
         </div>
 
-          <!-- ================= HR SECTIONS ================= -->
-
-        <!-- HR: Company setup -->
         <div id="hrCompany" class="card hidden">
-          <h3>Company verification</h3>
+          <h3>Company Profile System</h3>
           <div class="grid">
-            <div>
-              <label>Legal name</label>
-              <input id="coName" type="text" />
-            </div>
-            <div>
-              <label>Domain</label>
-              <input id="coDomain" type="text" placeholder="company.com" />
-            </div>
-            <div>
-              <label>GST/CIN</label>
-              <input id="coCin" type="text" />
-            </div>
-            <div>
-              <label>Address</label>
-              <input id="coAddr" type="text" placeholder="Street / Area / Landmark" />
-            </div>
-            <div>
-              <label>City</label>
-              <input id="coCity" type="text" placeholder="e.g. Sagar" />
-            </div>
-            <div>
-              <label>State</label>
-              <input id="coState" type="text" placeholder="e.g. Madhya Pradesh" />
-            </div>
-            <div>
-              <label>PIN Code</label>
-              <input id="coPin" type="text" maxlength="6" placeholder="e.g. 470001" />
-            </div>
+            <div><label>Legal name</label><input id="coName" type="text" /></div>
+            <div><label>Domain</label><input id="coDomain" type="text" placeholder="company.com" /></div>
           </div>
-          <div class="row">
-            <button id="submitCompanyBtn" class="btn">Submit for admin verification</button>
-          </div>
+          <div class="row"><button id="submitCompanyBtn" class="btn">Submit Profile</button></div>
           <p id="companyMsg" class="muted"></p>
         </div>
 
-        <!-- HR: Verification dashboard -->
-        <div id="hrVerify" class="card hidden">
-          <h3>HR Verification dashboard</h3>
-          <p class="muted">Welcome, HR Manager. Candidate WorkID validate karein, access request bhejein, aur history dekhein.</p>
-          <div class="row">
-            <input id="lookupWorkId" type="text" placeholder="Enter WorkID or scan QR payload"/>
-            <button id="requestAccessBtn" class="btn">Request access</button>
-          </div>
-          <div id="hrReqList" class="list"></div>
-          <div id="hrClaims" class="list"></div>
-        </div>
-
-        <!-- HR: Tools panel -->
-        <div id="hrPanelTools" class="card hidden">
-          <h3>HR Tools</h3>
-
-          <!-- Candidate Joining -->
-          <div class="hr-section">
-            <h4>Candidate Joining</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrJoinWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Joining Date</label>
-                <input id="hrJoinDate" type="date" />
-              </div>
-              <div>
-                <label>Position</label>
-                <input id="hrJoinPosition" type="text" placeholder="e.g. Software Engineer" />
-              </div>
-              <div>
-                <label>Department</label>
-                <input id="hrJoinDept" type="text" placeholder="e.g. IT / HR / Finance" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrConfirmJoiningBtn" class="btn">Confirm Joining</button>
-            </div>
-          </div>
-
-          <!-- Job Posting -->
-          <div class="hr-section">
-            <h4>Post a Job</h4>
-            <div class="grid">
-              <!-- Basic details -->
-              <div>
-                <label>Job Title</label>
-                <input id="hrJobTitle" type="text" placeholder="e.g. Frontend Developer" />
-              </div>
-              <div>
-                <label>Department / Team</label>
-                <input id="hrJobDept" type="text" placeholder="e.g. Engineering / Sales" />
-              </div>
-              <div>
-                <label>Location</label>
-                <input id="hrJobLocation" type="text" placeholder="e.g. Remote / Delhi" />
-              </div>
-              <div>
-                <label>Employment Type</label>
-                <select id="hrJobType">
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Contract</option>
-                  <option>Internship</option>
-                </select>
-              </div>
-              <div>
-                <label>Shift Type</label>
-                <select id="hrJobShift">
-                  <option>General</option>
-                  <option>Night</option>
-                  <option>Rotational</option>
-                </select>
-              </div>
-              <!-- Compensation & level -->
-              <div>
-                <label>Experience Range (years)</label>
-                <input id="hrExpRange" type="text" placeholder="1–3 years" />
-              </div>
-              <div>
-                <label>Salary Range</label>
-                <input id="hrSalaryRange" type="text" placeholder="3–5 LPA / 20–30k" />
-              </div>
-              <div>
-                <label>Level / Band</label>
-                <input id="hrJobLevel" type="text" placeholder="Junior / Mid / Senior" />
-              </div>
-              <div>
-                <label>Preferred Notice Period</label>
-                <select id="hrNoticePref">
-                  <option>Immediate joiner</option>
-                  <option>15 days</option>
-                  <option>30 days</option>
-                  <option>60 days</option>
-                </select>
-              </div>
-              <!-- Skills & eligibility -->
-              <div>
-                <label>Required Skills</label>
-                <input id="hrReqSkills" type="text" placeholder="React, Node.js, SQL" />
-              </div>
-              <div>
-                <label>Good-to-have Skills</label>
-                <input id="hrGoodSkills" type="text" placeholder="AWS, Docker, Microservices" />
-              </div>
-              <div>
-                <label>Minimum Qualification</label>
-                <input id="hrMinEdu" type="text" placeholder="Any Graduate / B.Tech" />
-              </div>
-              <div>
-                <label>Mandatory Certifications</label>
-                <input id="hrCerts" type="text" placeholder="e.g. AZ-900, ITIL" />
-              </div>
-              <!-- WorkID specific filters -->
-              <div>
-                <label>Required WorkID Status</label>
-                <select id="hrWidStatusReq">
-                  <option>Any</option>
-                  <option>Verified only</option>
-                </select>
-              </div>
-              <div>
-                <label>Minimum WorkID Rating</label>
-                <select id="hrMinRating">
-                  <option>Any</option>
-                  <option>3+ stars</option>
-                  <option>4+ stars</option>
-                  <option>5 stars only</option>
-                </select>
-              </div>
-              <div>
-                <label>Minimum Attendance (%)</label>
-                <input id="hrMinAttendance" type="number" min="0" max="100" placeholder="80" />
-              </div>
-              <div>
-                <label>Background Check Level</label>
-                <select id="hrBgLevel">
-                  <option>Basic</option>
-                  <option>Standard</option>
-                  <option>Advanced</option>
-                </select>
-              </div>
-              <!-- Process & tracking -->
-              <div>
-                <label>Number of Openings</label>
-                <input id="hrOpenings" type="number" min="1" value="1" />
-              </div>
-              <div>
-                <label>Deadline</label>
-                <input id="hrJobDeadline" type="date" />
-              </div>
-              <div>
-                <label>Hiring Manager Name</label>
-                <input id="hrHiringManager" type="text" placeholder="Rohit Kumar" />
-              </div>
-              <div>
-                <label>Hiring Manager Email</label>
-                <input id="hrHiringEmail" type="email" placeholder="hr@company.com" />
-              </div>
-              <div>
-                <label>Job Code / Requisition ID</label>
-                <input id="hrJobCode" type="text" placeholder="JOB-2025-001" />
-              </div>
-              <div>
-                <label>Visibility</label>
-                <select id="hrVisibility">
-                  <option>Public</option>
-                  <option>Internal only</option>
-                  <option>Referral only</option>
-                </select>
-              </div>
-            </div>
-            <div class="row">
-              <div style="flex:1;">
-                <label>Job Description</label>
-                <textarea id="hrJobDesc" rows="4"
-                  placeholder="Responsibilities, tech stack, culture, benefits, etc."></textarea>
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrPostJobBtn" class="btn">Post Job</button>
-            </div>
-          </div>
-
-          <!-- Attendance Tracker -->
-          <div class="hr-section">
-            <h4>Attendance Tracker</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrAttWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Date</label>
-                <input id="hrAttDate" type="date" />
-              </div>
-              <div>
-                <label>Status</label>
-                <select id="hrAttStatus">
-                  <option>Present</option>
-                  <option>Absent</option>
-                  <option>Leave</option>
-                </select>
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrMarkAttendanceBtn" class="btn">Mark Attendance</button>
-            </div>
-            <table class="hr-attendance-table">
-              <thead>
-                <tr><th>Date</th><th>Status</th></tr>
-              </thead>
-              <tbody id="hrAttTableBody">
-                <tr><td>2025-12-11</td><td>Present</td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Exit Management -->
-          <div class="hr-section">
-            <h4>Exit Management</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrExitWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Exit Date</label>
-                <input id="hrExitDate" type="date" />
-              </div>
-              <div>
-                <label>Upload Relieving Letter (PDF)</label>
-                <input id="hrExitLetter" type="file" accept=".pdf" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrSubmitExitBtn" class="btn">Submit Exit</button>
-            </div>
-          </div>
-
-          <!-- Feedback & Rating -->
-          <div class="hr-section">
-            <h4>Candidate Feedback</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrFbWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Star Rating</label>
-                <select id="hrFbRating">
-                  <option>⭐</option>
-                  <option>⭐⭐</option>
-                  <option>⭐⭐⭐</option>
-                  <option>⭐⭐⭐⭐</option>
-                  <option>⭐⭐⭐⭐⭐</option>
-                </select>
-              </div>
-            </div>
-            <label>Feedback</label>
-            <textarea id="hrFbText" rows="3" placeholder="Write feedback..."></textarea>
-            <div class="row">
-              <button id="hrSubmitFeedbackBtn" class="btn">Submit Feedback</button>
-            </div>
-          </div>
-
-          <!-- Candidate History Lookup -->
-          <div class="hr-section">
-            <h4>Candidate History Lookup</h4>
-            <div class="hr-search-box">
-              <input id="hrHistoryWorkId" type="text" placeholder="Enter WorkID e.g. WID-2025-00123" />
-              <button id="hrHistorySearchBtn">Search</button>
-            </div>
-            <div id="hrHistoryResult" class="hr-feedback-box">
-              <strong>Result:</strong> Candidate found. Last worked at XYZ Corp. Rated ⭐⭐⭐⭐. Exit: 2025-10-15.
-            </div>
-          </div>
-
-          <!-- Incoming Verification Requests -->
-          <div class="hr-section">
-            <h4>Incoming Verification Requests</h4>
-            <div class="hr-job-post">
-              <div class="title">Request from HR: ABC Pvt Ltd</div>
-              <div class="meta">Candidate: WID-2025-00123 | Requested on: 2025-12-10</div>
-              <div class="readonly-box">
-                <p><strong>Name:</strong> Candidate Name</p>
-                <p><strong>Last Company:</strong> XYZ Corp (2023–2025)</p>
-              </div>
-              <label>Reply / Verification</label>
-              <textarea id="hrIncomingReply" rows="2" placeholder="e.g. Verified. Candidate worked from Jan 2023 to Oct 2025. No issues."></textarea>
-              <div class="row">
-                <button id="hrMarkVerifiedBtn" class="btn">Mark as Verified</button>
-                <button id="hrMarkNotMatchedBtn" class="btn-outline">Not Matched</button>
-              </div>
-              <div class="hr-section">
-                <h4>HR–HR Chat (for this request)</h4>
-                <div id="hrChatMessages" class="chat-box"></div>
-                <div class="row">
-                  <input id="hrChatInput" type="text" placeholder="Type a message..." />
-                  <button id="hrChatSendBtn" class="btn small">Send</button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Outgoing Verification Requests (simple demo form) -->
-          <div class="hr-section">
-            <h4>Outgoing Verification Request</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="outReqWorkId" type="text" placeholder="WID-..." />
-              </div>
-              <div>
-                <label>Target Company</label>
-                <input id="outReqCompany" type="text" placeholder="ABC Pvt Ltd" />
-              </div>
-              <div>
-                <label>Target HR Email</label>
-                <input id="outReqHrEmail" type="email" placeholder="hr@company.com" />
-              </div>
-              <div>
-                <label>Reason</label>
-                <input id="outReqReason" type="text" placeholder="Employment verification" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="outReqSendBtn" class="btn">Send Request</button>
-            </div>
-            <p id="outReqMsg" class="muted"></p>
-          </div>
-        </div>
-
-        <!-- Admin Panel -->
-        <div id="adminPanel" class="card hidden">
-          <h3>Admin Controls</h3>
-          <div class="row auth-tabs">
-            <button data-admin-tab="overview" class="btn small auth-tab active">Overview</button>
-            <button data-admin-tab="users" class="btn-outline small auth-tab">Users</button>
-            <button data-admin-tab="hrApprove" class="btn-outline small auth-tab">HR Approvals</button>
-          </div>
-          <div id="adminContent" class="mt-2">
-            <p class="muted">Select tab for admin data.</p>
-          </div>
-        </div>
+        <div id="hrPanelTools" class="card hidden"><h3>Advanced HR Tools</h3><p class="muted">Feature active post-verification.</p></div>
+        <div id="employmentHistory" class="card hidden"><h3>Employment Archive</h3></div>
+        <div id="adminPanel" class="card hidden"><h3>Admin Panel Controls</h3></div>
       </section>
     </section>
   </main>
