@@ -1,4 +1,4 @@
-// WorkID Demo App Logic – localStorage POC (STRICT AUTH + DUAL OTP FIX)
+// WorkID Demo App Logic – localStorage POC (FULLY SECURED AUTH + ROLE + EMAIL DUP FIX)
 (function(){
   'use strict';
   
@@ -10,7 +10,6 @@
     seqByYear: {}
   };
   
-  // Email aur Mobile dono ke liye alag OTP variables
   let currentMobileOtp = null;
   let currentEmailOtp = null;
   let otpAuth = null;
@@ -44,17 +43,14 @@
     bindLogout();
     bindPasswordToggle();
     render();
-    setupOtpUiFields(); // Email OTP input box dynamically inject karne ke liye
+    setupOtpUiFields(); 
   });
 
-  // Dynamic UI Fix: Ek hi OTP box ki jagah Mobile aur Email dono ka input handle karna
   function setupOtpUiFields() {
     const otpInput = $('otpInput');
     if (otpInput && !$('emailOtpInput')) {
-      // Purane single OTP box ki placeholder text change karna
       otpInput.placeholder = "Enter Mobile OTP";
       
-      // Email OTP ke liye naya input element create karna
       const emailOtpBox = document.createElement('input');
       emailOtpBox.id = 'emailOtpInput';
       emailOtpBox.type = 'text';
@@ -62,7 +58,6 @@
       emailOtpBox.placeholder = "Enter Email OTP";
       emailOtpBox.style.marginTop = "8px";
       
-      // UI me append karna
       otpInput.parentNode.insertBefore(emailOtpBox, otpInput.nextSibling);
     }
   }
@@ -95,7 +90,7 @@
     });
   }
 
-  // ================= AUTH SYSTEM (STRICT + DUAL OTP) =================
+  // ================= AUTH SYSTEM (STRICT UPDATE) =================
   function bindAuth() {
     const sendOtpBtn = $('sendOtpBtn');
     const verifyOtpBtn = $('verifyOtpBtn');
@@ -121,14 +116,13 @@
         }
         
         const auth = { role, mobile, email };
-        const user = getUserByEmailAndMobile(auth); 
+        const user = getUserByEmailMobileAndRole(auth); 
         
         if (!user) {
-          msgEl.textContent = '❌ Account nahi mila! Krpya check karein ki Email aur Mobile dono sahi hain.';
+          msgEl.textContent = `❌ Account nahi mila! Is Email, Mobile aur Selected Role (${role}) ka koi combination registered nahi hai.`;
           return;
         }
         
-        // Demo password validation
         state.session = { ...auth, userId: user.id, passwordOk: true };
         msgEl.textContent = 'Password accepted. Ab "Send OTP" par click karein.';
       });
@@ -150,14 +144,12 @@
           return;
         }
         
-        // Dono platforms ke liye unique OTPs generate karna
         currentMobileOtp = generateOtp();
         currentEmailOtp = generateOtp();
         otpAuth = { role, mobile, email };
         
-        // Demo Alerts for simulation
         alert(`📱 Mobile OTP Sent to [${mobile}]: ${currentMobileOtp}\n📧 Email OTP Sent to [${email}]: ${currentEmailOtp}`);
-        msgEl.textContent = '✅ OTPs sent successfully to your Mobile and Email address.';
+        msgEl.textContent = '✅ OTPs sent successfully to your Mobile and Email.';
       });
     }
 
@@ -176,7 +168,6 @@
           return;
         }
         
-        // Strict Dual OTP matching checks
         if (givenMobileOtp !== currentMobileOtp) {
           msgEl.textContent = '❌ Invalid Mobile OTP.';
           return;
@@ -187,7 +178,7 @@
         }
         
         const auth = otpAuth;
-        const user = getUserByEmailAndMobile(auth); 
+        const user = getUserByEmailMobileAndRole(auth); 
         
         if (!user) {
           msgEl.textContent = 'Session mismatch. Sahi details se login karein.';
@@ -208,6 +199,7 @@
       forgotBtn.addEventListener('click', () => {
         const email = $('fpEmail')?.value.trim();
         const mobile = $('fpMobile')?.value.trim();
+        const role = $('roleSelect')?.value || 'candidate'; 
         const msgEl = $('authMsg');
         
         if (!email || !mobile) {
@@ -216,10 +208,10 @@
         }
         
         const users = getStore('users');
-        const user = users.find(u => u.email === email && u.mobile === mobile);
+        const user = users.find(u => u.email === email && u.mobile === mobile && u.role === role);
         
         if (!user) {
-          msgEl.textContent = '❌ Is combination ka koi user nahi mila.';
+          msgEl.textContent = `❌ Is Role (${role}) ke liye is configuration ka koi user nahi mila.`;
           return;
         }
         
@@ -227,6 +219,7 @@
         sessionStorage.setItem('resetOtp', resetOtp);
         sessionStorage.setItem('resetEmail', email);
         sessionStorage.setItem('resetMobile', mobile);
+        sessionStorage.setItem('resetRole', role);
         alert(`Demo Reset OTP: ${resetOtp}`);
         msgEl.textContent = 'OTP bhej diya.';
         if ($('resetOtpSection')) $('resetOtpSection').style.display = 'flex';
@@ -253,8 +246,9 @@
         
         const rEmail = sessionStorage.getItem('resetEmail');
         const rMobile = sessionStorage.getItem('resetMobile');
+        const rRole = sessionStorage.getItem('resetRole');
         const users = getStore('users') || [];
-        const user = users.find(u => u.email === rEmail && u.mobile === rMobile);
+        const user = users.find(u => u.email === rEmail && u.mobile === rMobile && u.role === rRole);
         
         if (user) {
           user.password = newPass;
@@ -276,7 +270,7 @@
       });
     });
 
-    // SIGNUP
+    // 🚀 SIGNUP LOGIC FIXED (STRICT SYSTEM-WIDE DUPLICATION CHECK)
     $('signupBtn')?.addEventListener('click', () => {
       const role = $('suRole')?.value || 'candidate';
       const name = $('suName')?.value.trim();
@@ -290,20 +284,29 @@
         return;
       }
       
-      const auth = { role, email, mobile: mob };
       const users = getStore('users');
-      const existingUser = users.find(u => u.email === email || u.mobile === mob);
       
-      if (existingUser) {
-        msgEl.textContent = '❌ Email ya Mobile Number pehle se registered hai.';
+      // 1. Check if Email already exists anywhere in the system
+      const emailExists = users.find(u => u.email === email);
+      if (emailExists) {
+        msgEl.textContent = `❌ Yeh Email ID (${email}) pehle से सिस्टम में रजिस्टर्ड है!`;
+        return;
+      }
+
+      // 2. Check if Mobile number already exists anywhere in the system
+      const mobileExists = users.find(u => u.mobile === mob);
+      if (mobileExists) {
+        msgEl.textContent = `❌ Yeh Mobile Number (${mob}) pehle से सिस्टम में रजिस्टर्ड है!`;
         return;
       }
       
+      // Agar dono unique hain, tabhi entry generate hogi
+      const auth = { role, email, mobile: mob };
       const user = createUser(auth);
       user.profile.name = name;
       user.password = p1; 
       saveUser(user);
-      msgEl.textContent = '✅ Account created! Login kariye.';
+      msgEl.textContent = '✅ Account created successfully! Ab Login kariye.';
     });
   }
 
@@ -312,9 +315,9 @@
   function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
   function generateOtp() { return Math.floor(100000 + Math.random() * 900000).toString(); }
   
-  function getUserByEmailAndMobile(auth) {
+  function getUserByEmailMobileAndRole(auth) {
     const users = getStore('users');
-    return users.find(u => u.email === auth.email && u.mobile === auth.mobile) || null;
+    return users.find(u => u.email === auth.email && u.mobile === auth.mobile && u.role === auth.role) || null;
   }
 
   function createUser(auth) {
@@ -644,7 +647,7 @@
       jobs.push({
         id: 'job_' + Date.now(),
         title: $('hrJobTitle')?.value.trim(),
-        company: $('hrHiringManager')?.value || 'Active Partner Enterprise',
+        company: HornHiringManager?.value || 'Active Partner Enterprise',
         location: selectedJobLocation,
         salary: $('hrSalaryRange')?.value || 'Negotiable',
         exp: $('hrExpRange')?.value || 'Any'
