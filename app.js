@@ -1,735 +1,789 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WorkID – Verified Employment Identity</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-</head>
-<body>
-  <!-- Top App Bar -->
-  <header class="appbar">
-    <div class="brand">
-      <span class="logo">WorkID</span>
-      <span class="subtitle">Verified Employment Identity System</span>
-    </div>
-    <div class="actions">
-      <a href="super-admin.2.html" class="btn-outline small">Super Admin</a>
-      <select id="themeSelect">
-        <option value="light">Light</option>
-        <option value="dark" selected>Dark</option>
-      </select>
-      <button id="logoutBtn" class="btn-outline small">Logout</button>
-    </div>
-  </header>
+// WorkID Demo App Logic – localStorage POC (STRICT AUTH + DUAL OTP FIX)
+(function(){
+  'use strict';
+  
+  // ================= GLOBALS =================
+  const $ = (id) => document.getElementById(id);
+  
+  const state = {
+    session: null, // {role, userId, email, mobile}
+    seqByYear: {}
+  };
+  
+  // Email aur Mobile dono ke liye alag OTP variables
+  let currentMobileOtp = null;
+  let currentEmailOtp = null;
+  let otpAuth = null;
 
-  <main class="container">
-    <!-- AUTH CARD -->
-    <section class="card">
-      <h2>WorkID Access</h2>
+  const AVAILABLE_LOCATIONS = ["Sagar", "Bhopal", "Indore", "Jabalpur", "Delhi", "Mumbai", "Remote"];
 
-      <div class="row auth-tabs">
-        <button id="tabLogin" class="btn small auth-tab active">Login</button>
-        <button id="tabSignup" class="btn-outline small auth-tab">Sign Up</button>
-        <button id="tabForgot" class="btn-outline small auth-tab">Forgot</button>
-      </div>
+  // ================= ROLE MAPPING =================
+  function getMappedRole(role) {
+    const roleMap = {
+      'superadmin': 'superadmin',
+      'stateadmin': 'stateadmin', 
+      'districtadmin': 'districtadmin',
+      'admin': 'admin',
+      'entrepreneur': 'hr',
+      'candidate': 'candidate',
+      'hr': 'hr'
+    };
+    return roleMap[role] || role;
+  }
 
-      <!-- LOGIN BOX -->
-      <div id="authLoginBox">
-        <div class="grid">
-          <div>
-            <label>Role</label>
-            <select id="roleSelect">
-              <option value="entrepreneur">Entrepreneur</option>
-              <option value="candidate">Candidate</option>
-              <option value="hr">HR</option>
-            </select>
-          </div>
-          <div>
-            <label>Mobile</label>
-            <input id="mobileInput" type="tel" placeholder="+91XXXXXXXXXX" />
-          </div>
-          <div>
-            <label>Email</label>
-            <input id="emailInput" type="email" placeholder="you@company.com" />
-          </div>
-          <div>
-            <label>Password</label>
-            <div class="password-wrap">
-              <input id="loginPass" type="password" placeholder="Enter password" />
-              <button type="button" id="togglePass" class="eye-btn" aria-label="Show password">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M2 12C3.8 7.8 7.5 5 12 5s8.2 2.8 10 7c-1.8 4.2-5.5 7-10 7S3.8 16.2 2 12Z" stroke="#4b5563" stroke-width="1.6" />
-                  <circle id="eyePupil" cx="12" cy="12" r="3" fill="#4b5563" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
+  // ================= BOOT =================
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(syncAdminData, 100);
+    bindAuth();
+    bindTheme();
+    bindNav();
+    bindCandidate();
+    bindHR();
+    bindAdmin();
+    bindFeedback();
+    bindLogout();
+    bindPasswordToggle();
+    render();
+    setupOtpUiFields(); // Email OTP input box dynamically inject karne ke liye
+  });
 
-        <div class="row">
-          <button id="passwordLoginBtn" class="btn">Login with Password</button>
-        </div>
+  // Dynamic UI Fix: Ek hi OTP box ki jagah Mobile aur Email dono ka input handle karna
+  function setupOtpUiFields() {
+    const otpInput = $('otpInput');
+    if (otpInput && !$('emailOtpInput')) {
+      // Purane single OTP box ki placeholder text change karna
+      otpInput.placeholder = "Enter Mobile OTP";
+      
+      // Email OTP ke liye naya input element create karna
+      const emailOtpBox = document.createElement('input');
+      emailOtpBox.id = 'emailOtpInput';
+      emailOtpBox.type = 'text';
+      emailOtpBox.className = 'input mt-2';
+      emailOtpBox.placeholder = "Enter Email OTP";
+      emailOtpBox.style.marginTop = "8px";
+      
+      // UI me append karna
+      otpInput.parentNode.insertBefore(emailOtpBox, otpInput.nextSibling);
+    }
+  }
 
-        <div class="row">
-          <button id="sendOtpBtn" class="btn">Send OTP</button>
-          <input id="otpInput" type="text" class="otp" placeholder="Enter OTP" maxlength="6" />
-          <button id="verifyOtpBtn" class="btn-secondary">Verify</button>
-        </div>
-      </div>
+  // ================= PASSWORD TOGGLE =================
+  function bindPasswordToggle() {
+    const passInput = $('loginPass');
+    const toggleBtn = $('togglePass');
+    if (!passInput || !toggleBtn) return;
+    
+    toggleBtn.addEventListener('click', () => {
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.setAttribute('aria-label', 'Hide password');
+        $('eyePupil')?.setAttribute('fill', 'transparent');
+      } else {
+        passInput.type = 'password';
+        toggleBtn.setAttribute('aria-label', 'Show password');
+        $('eyePupil')?.setAttribute('fill', '#4b5563');
+      }
+    });
+  }
 
-      <!-- SIGNUP BOX -->
-      <div id="authSignupBox" class="hidden">
-        <div class="grid">
-          <div>
-            <label>Role</label>
-            <select id="suRole">
-              <option value="entrepreneur">Entrepreneur</option>
-              <option value="candidate">Candidate</option>
-              <option value="hr">HR</option>
-            </select>
-          </div>
-          <div>
-            <label>Full name</label>
-            <input id="suName" type="text" placeholder="Enter full name" />
-          </div>
-          <div>
-            <label>Email</label>
-            <input id="suEmail" type="email" placeholder="your@email.com" />
-          </div>
-          <div>
-            <label>Mobile</label>
-            <input id="suMobile" type="tel" placeholder="+91XXXXXXXXXX" />
-          </div>
-          <div>
-            <label>Password</label>
-            <input id="suPass" type="password" placeholder="Minimum 6 characters" />
-          </div>
-          <div>
-            <label>Confirm password</label>
-            <input id="suPass2" type="password" placeholder="Re-enter password" />
-          </div>
-        </div>
+  // ================= THEME =================
+  function bindTheme() {
+    const select = $('themeSelect');
+    if (!select) return;
+    select.addEventListener('change', () => {
+      document.documentElement.classList.toggle('dark', select.value === 'dark');
+    });
+  }
 
-        <!-- ENTREPRENEUR EXTRA FIELDS (show when entrepreneur selected) -->
-        <div id="entSection" class="grid hidden">
-          <!-- Basic Business Info -->
-          <div>
-            <label>Business Legal Name <span class="required">*</span></label>
-            <input id="entBusinessName" type="text" placeholder="Exact legal name" required />
-          </div>
-          <div>
-            <label>GST Number <span class="required">*</span></label>
-            <input id="entGst" type="text" placeholder="15ABCDE1234F1Z5" maxlength="15" required />
-          </div>
-          
-          <!-- Business Category -->
-          <div>
-            <label>Business Category <span class="required">*</span></label>
-            <select id="entBusinessCategory" required>
-              <option value="">Select Category</option>
-              <option value="hospitality">🏨 Hospitality (Hotel, Restaurant, Cafe)</option>
-              <option value="medical">🏥 Medical (Clinic, Hospital, Pharmacy)</option>
-              <option value="retail">🛒 Retail (Shop, Supermarket, Electronics)</option>
-              <option value="trading">📦 Trading/Wholesale</option>
-              <option value="manufacturing">🏭 Manufacturing</option>
-              <option value="services">💼 Services (Salon, Gym, Coaching)</option>
-              <option value="education">📚 Education/Coaching</option>
-              <option value="transport">🚗 Transport/Logistics</option>
-              <option value="it">💻 IT/Software</option>
-              <option value="construction">🏗️ Construction</option>
-              <option value="other">📋 Other</option>
-            </select>
-          </div>
-          
-          <!-- Business Size -->
-          <div>
-            <label>Business Size <span class="required">*</span></label>
-            <select id="entBusinessSize" required>
-              <option value="micro">Micro (<10 employees)</option>
-              <option value="small">Small (10-50 employees)</option>
-              <option value="medium">Medium (50-250 employees)</option>
-              <option value="large">Large (>250 employees)</option>
-            </select>
-          </div>
-          
-          <!-- Registration -->
-          <div>
-            <label>Registration Type <span class="required">*</span></label>
-            <select id="entRegType" required>
-              <option value="proprietorship">Proprietorship</option>
-              <option value="partnership">Partnership</option>
-              <option value="pvtltd">Private Limited</option>
-              <option value="llp">LLP</option>
-              <option value="shopact">Shop & Establishment</option>
-              <option value="msme">MSME/Udyam</option>
-            </select>
-          </div>
-          <div>
-            <label>Registration No. <span class="required">*</span></label>
-            <input id="entRegNumber" type="text" placeholder="CIN/MSME/Shop Act No." required />
-          </div>
-          
-          <!-- Address -->
-          <div>
-            <label>Registered Address <span class="required">*</span></label>
-            <input id="entAddress" type="text" placeholder="Street/Area/Landmark" required />
-          </div>
-          <div>
-            <label>City <span class="required">*</span></label>
-            <input id="entCity" type="text" required />
-          </div>
-          <div>
-            <label>State <span class="required">*</span></label>
-            <input id="entState" type="text" required />
-          </div>
-          <div>
-            <label>PIN Code <span class="required">*</span></label>
-            <input id="entPin" type="text" maxlength="6" required />
-          </div>
-          
-          <!-- Contact -->
-          <div>
-            <label>Official Email <span class="required">*</span></label>
-            <input id="entDomainEmail" type="email" placeholder="hr@yourcompany.com" required />
-          </div>
-          <div>
-            <label>Annual Turnover <span class="required">*</span></label>
-            <select id="entTurnover" required>
-              <option value="">Select</option>
-              <option value="0-10L">0-10 Lakh</option>
-              <option value="10-50L">10-50 Lakh</option>
-              <option value="50L-1Cr">50L-1 Crore</option>
-              <option value="1-5Cr">1-5 Crore</option>
-              <option value="5Cr+">5 Cr+</option>
-            </select>
-          </div>
-          
-          <!-- Documents -->
-          <div class="row full-width">
-            <label>Documents <span class="required">*</span></label>
-            <div class="doc-grid">
-              <div><label>GST Certificate</label><input id="entGstFile" type="file" accept=".pdf,.jpg,.jpeg,.png" /></div>
-              <div><label>Registration/License <span class="required">*</span></label><input id="entLicenseFile" type="file" accept=".pdf,.jpg,.jpeg,.png" required /></div>
-              <div><label>Address Proof</label><input id="entAddrProof" type="file" accept=".pdf,.jpg,.jpeg,.png" /></div>
-            </div>
-          </div>
-        </div>
+  // ================= AUTH SYSTEM (STRICT + DUAL OTP) =================
+  function bindAuth() {
+    const sendOtpBtn = $('sendOtpBtn');
+    const verifyOtpBtn = $('verifyOtpBtn');
+    const passwordLoginBtn = $('passwordLoginBtn');
+    const forgotBtn = $('forgotBtn');
+    const resetPasswordBtn = $('resetPasswordBtn');
 
-        <p id="entHelp" class="muted hidden">
-          <strong>Required:</strong> GST, Registration, License doc, complete address. 
-          <strong>Max 5MB per file.</strong>
-        </p>
-
-        <div class="row">
-          <button id="signupBtn" class="btn">Create Account</button>
-        </div>
-      </div>
-
-      <!-- FORGOT PASSWORD BOX - FULLY FUNCTIONAL -->
-      <div id="authForgotBox" class="hidden">
-        <p class="muted">Password reset via OTP - Demo mode.</p>
-        <div class="grid">
-          <div>
-            <label>Registered email</label>
-            <input id="fpEmail" type="email" placeholder="admin@workid.in" />
-          </div>
-          <div>
-            <label>Or mobile</label>
-            <input id="fpMobile" type="tel" placeholder="91XXXXXXXXXX" />
-          </div>
-        </div>
-        <div class="row">
-          <button id="forgotBtn" class="btn">Send Reset OTP</button>
-        </div>
+    if (passwordLoginBtn) {
+      passwordLoginBtn.addEventListener('click', () => {
+        const role = $('roleSelect')?.value || 'candidate';
+        const mobile = $('mobileInput')?.value.trim();
+        const email = $('emailInput')?.value.trim();
+        const pass = $('loginPass')?.value;
+        const msgEl = $('authMsg');
         
-        <!-- RESET FORM (shows after OTP sent) -->
-        <div id="resetOtpSection" class="row" style="display:none; gap:8px; margin-top:16px; flex-wrap:wrap;">
-          <input id="resetOtpInput" type="text" class="otp" placeholder="6-digit OTP" maxlength="6" />
-          <input id="newPasswordInput" type="password" placeholder="New password (min 6)" />
-          <input id="newPasswordConfirm" type="password" placeholder="Confirm password" />
-          <button id="resetPasswordBtn" class="btn-secondary small">Reset Password</button>
-        </div>
+        if (!mobile || !email) {
+          msgEl.textContent = '❌ Mobile aur Email dono daalna mandatory hai.';
+          return;
+        }
+        if (!pass) {
+          msgEl.textContent = 'Password required.';
+          return;
+        }
         
-        <p id="resetMsg" class="muted" style="margin-top:8px;"></p>
+        const auth = { role, mobile, email };
+        const user = getUserByEmailAndMobile(auth); 
+        
+        if (!user) {
+          msgEl.textContent = '❌ Account nahi mila! Krpya check karein ki Email aur Mobile dono sahi hain.';
+          return;
+        }
+        
+        // Demo password validation
+        state.session = { ...auth, userId: user.id, passwordOk: true };
+        msgEl.textContent = 'Password accepted. Ab "Send OTP" par click karein.';
+      });
+    }
+
+    if (sendOtpBtn) {
+      sendOtpBtn.addEventListener('click', () => {
+        const role = $('roleSelect')?.value || 'candidate';
+        const mobile = $('mobileInput')?.value.trim();
+        const email = $('emailInput')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!mobile || !email) {
+          msgEl.textContent = 'Mobile aur Email dono required hain.';
+          return;
+        }
+        if (!state.session || !state.session.passwordOk) {
+          msgEl.textContent = 'Pehle password se login verify karein.';
+          return;
+        }
+        
+        // Dono platforms ke liye unique OTPs generate karna
+        currentMobileOtp = generateOtp();
+        currentEmailOtp = generateOtp();
+        otpAuth = { role, mobile, email };
+        
+        // Demo Alerts for simulation
+        alert(`📱 Mobile OTP Sent to [${mobile}]: ${currentMobileOtp}\n📧 Email OTP Sent to [${email}]: ${currentEmailOtp}`);
+        msgEl.textContent = '✅ OTPs sent successfully to your Mobile and Email address.';
+      });
+    }
+
+    if (verifyOtpBtn) {
+      verifyOtpBtn.addEventListener('click', () => {
+        const givenMobileOtp = $('otpInput')?.value.trim();
+        const givenEmailOtp = $('emailOtpInput')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!givenMobileOtp || !givenEmailOtp) {
+          msgEl.textContent = '❌ Krpya Mobile aur Email dono ka OTP enter karein.';
+          return;
+        }
+        if (!currentMobileOtp || !currentEmailOtp || !otpAuth) {
+          msgEl.textContent = 'OTP request pehle generate karein.';
+          return;
+        }
+        
+        // Strict Dual OTP matching checks
+        if (givenMobileOtp !== currentMobileOtp) {
+          msgEl.textContent = '❌ Invalid Mobile OTP.';
+          return;
+        }
+        if (givenEmailOtp !== currentEmailOtp) {
+          msgEl.textContent = '❌ Invalid Email OTP.';
+          return;
+        }
+        
+        const auth = otpAuth;
+        const user = getUserByEmailAndMobile(auth); 
+        
+        if (!user) {
+          msgEl.textContent = 'Session mismatch. Sahi details se login karein.';
+          return;
+        }
+        
+        state.session = { ...auth, userId: user.id };
+        currentMobileOtp = null;
+        currentEmailOtp = null;
+        otpAuth = null;
+        msgEl.textContent = '✅ Dual OTP Verified! Logged in successfully.';
+        buildNavForRole(auth.role);
+        render();
+      });
+    }
+
+    if (forgotBtn) {
+      forgotBtn.addEventListener('click', () => {
+        const email = $('fpEmail')?.value.trim();
+        const mobile = $('fpMobile')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!email || !mobile) {
+          msgEl.textContent = 'Reset karne ke liye Email aur Mobile dono daalein.';
+          return;
+        }
+        
+        const users = getStore('users');
+        const user = users.find(u => u.email === email && u.mobile === mobile);
+        
+        if (!user) {
+          msgEl.textContent = '❌ Is combination ka koi user nahi mila.';
+          return;
+        }
+        
+        const resetOtp = generateOtp();
+        sessionStorage.setItem('resetOtp', resetOtp);
+        sessionStorage.setItem('resetEmail', email);
+        sessionStorage.setItem('resetMobile', mobile);
+        alert(`Demo Reset OTP: ${resetOtp}`);
+        msgEl.textContent = 'OTP bhej diya.';
+        if ($('resetOtpSection')) $('resetOtpSection').style.display = 'flex';
+      });
+    }
+
+    if (resetPasswordBtn) {
+      resetPasswordBtn.addEventListener('click', () => {
+        const otp = $('resetOtpInput')?.value.trim();
+        const newPass = $('newPasswordInput')?.value;
+        const confirmPass = $('newPasswordConfirm')?.value;
+        const msgEl = $('resetMsg') || $('authMsg');
+        
+        if (newPass !== confirmPass) {
+          msgEl.textContent = 'Passwords match nahi kar rahe.';
+          return;
+        }
+        
+        const storedOtp = sessionStorage.getItem('resetOtp');
+        if (otp !== storedOtp) {
+          msgEl.textContent = '❌ Invalid OTP.';
+          return;
+        }
+        
+        const rEmail = sessionStorage.getItem('resetEmail');
+        const rMobile = sessionStorage.getItem('resetMobile');
+        const users = getStore('users') || [];
+        const user = users.find(u => u.email === rEmail && u.mobile === rMobile);
+        
+        if (user) {
+          user.password = newPass;
+          setStore('users', users);
+          msgEl.textContent = '✅ Password reset successful!';
+        }
+      });
+    }
+
+    // TABS
+    const tabs = ['tabLogin', 'tabSignup', 'tabForgot'];
+    const boxes = ['authLoginBox', 'authSignupBox', 'authForgotBox'];
+    tabs.forEach((tabId, i) => {
+      $(tabId)?.addEventListener('click', () => {
+        tabs.forEach(t => $(t)?.classList.remove('active'));
+        boxes.forEach(b => $(b)?.classList.add('hidden'));
+        $(tabId).classList.add('active');
+        $(boxes[i])?.classList.remove('hidden');
+      });
+    });
+
+    // SIGNUP
+    $('signupBtn')?.addEventListener('click', () => {
+      const role = $('suRole')?.value || 'candidate';
+      const name = $('suName')?.value.trim();
+      const email = $('suEmail')?.value.trim();
+      const mob = $('suMobile')?.value.trim();
+      const p1 = $('suPass')?.value;
+      const msgEl = $('authMsg');
+      
+      if (!name || !email || !mob || !p1) {
+        msgEl.textContent = 'All fields required.';
+        return;
+      }
+      
+      const auth = { role, email, mobile: mob };
+      const users = getStore('users');
+      const existingUser = users.find(u => u.email === email || u.mobile === mob);
+      
+      if (existingUser) {
+        msgEl.textContent = '❌ Email ya Mobile Number pehle se registered hai.';
+        return;
+      }
+      
+      const user = createUser(auth);
+      user.profile.name = name;
+      user.password = p1; 
+      saveUser(user);
+      msgEl.textContent = '✅ Account created! Login kariye.';
+    });
+  }
+
+  // ================= STORAGE HELPERS =================
+  function getStore(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
+  function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+  function generateOtp() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+  
+  function getUserByEmailAndMobile(auth) {
+    const users = getStore('users');
+    return users.find(u => u.email === auth.email && u.mobile === auth.mobile) || null;
+  }
+
+  function createUser(auth) {
+    const users = getStore('users');
+    const user = {
+      id: 'usr_' + Date.now(),
+      role: auth.role,
+      email: auth.email,
+      mobile: auth.mobile,
+      password: 'demo123', 
+      profile: { status: 'Unverified' },
+      workId: null
+    };
+    users.push(user);
+    setStore('users', users);
+    return user;
+  }
+
+  function saveUser(user) {
+    const users = getStore('users');
+    const idx = users.findIndex(u => u.id === user.id);
+    if (idx >= 0) users[idx] = user;
+    else users.push(user);
+    setStore('users', users);
+  }
+
+  function currentUser() {
+    if (!state.session) return null;
+    const users = getStore('users');
+    return users.find(u => u.id === state.session.userId) || null;
+  }
+
+  // ================= NAVIGATION =================
+  function bindNav() {
+    $('navList')?.addEventListener('click', (e) => {
+      const li = e.target.closest('li[data-view]');
+      if (li?.dataset.view) {
+        showView(li.dataset.view);
+        if (li.dataset.view === 'workIdCard') updateWorkIdCardUI();
+        if (li.dataset.view === 'candidateProfile') renderCandidateDashboardLive();
+        if (li.dataset.view === 'hrPanelTools') renderHRReqListsLive();
+      }
+    });
+  }
+
+  function buildNavForRole(role) {
+    const nav = $('navList');
+    if (!nav) return;
+    nav.innerHTML = '';
+    const mappedRole = getMappedRole(role);
+    
+    if (mappedRole === 'candidate') {
+      ['candidateProfile', 'workIdCard', 'employmentHistory'].forEach(id => {
+        nav.appendChild(navItem(id, id.replace(/([A-Z])/g, ' $1').toLowerCase()));
+      });
+    } else if (mappedRole === 'hr' || mappedRole === 'entrepreneur') {
+      ['hrCompany', 'hrVerify', 'hrPanelTools'].forEach(id => {
+        nav.appendChild(navItem(id, id.replace(/([A-Z])/g, ' $1').toLowerCase()));
+      });
+    } else {
+      nav.appendChild(navItem('adminPanel', 'Admin'));
+    }
+  }
+
+  function navItem(viewId, label) {
+    const li = document.createElement('li');
+    li.textContent = label; li.dataset.view = viewId; return li;
+  }
+
+  function showView(id) {
+    document.querySelectorAll('.content > *').forEach(el => el.classList.add('hidden'));
+    $(id)?.classList.remove('hidden');
+  }
+
+  // ================= LIVE UI RE-RENDERERS =================
+  function updateWorkIdCardUI() {
+    const user = currentUser();
+    if (!user || !user.workId) return;
+    if ($('widName')) $('widName').textContent = user.profile?.name || 'Candidate Name';
+    if ($('widNumber')) $('widNumber').textContent = user.workId;
+    
+    const statusEl = $('widStatus');
+    if (statusEl) {
+      const currentStatus = user.profile?.status || 'Unverified';
+      statusEl.textContent = currentStatus;
+      statusEl.style.background = currentStatus === 'Verified' ? '#10b981' : '#6b7280';
+      statusEl.style.color = '#fff';
+    }
+    if ($('qrBox')) $('qrBox').innerHTML = `<div style="padding:10px; background:#fff; color:#000; text-align:center; font-size:10px; font-weight:bold;">QR CODE<br>${user.workId}</div>`;
+  }
+
+  function renderCandidateDashboardLive() {
+    const user = currentUser();
+    if (!user) return;
+
+    let liveContainer = $('candidateLiveSection');
+    if (!liveContainer) {
+      liveContainer = document.createElement('div');
+      liveContainer.id = 'candidateLiveSection';
+      liveContainer.style.marginTop = '24px';
+      $('candidateProfile').appendChild(liveContainer);
+    }
+
+    const jobs = getStore('posted_jobs');
+    const apps = getStore('job_applications').filter(a => a.candidateId === user.id);
+    const history = getStore('employment_history').filter(h => h.workId === user.workId);
+
+    const selectedLoc = sessionStorage.getItem('selectedJobLocation') || 'All';
+
+    let filterHtml = `
+      <div style="margin-top:20px; padding:15px; background:rgba(255,255,255,0.05); border-radius:8px; border:1px solid #4b5563;">
+        <label for="jobLocFilter" style="font-weight:bold; display:block; margin-bottom:8px; color:#34d399;">📍 View Jobs by Location:</label>
+        <select id="jobLocFilter" class="input" style="max-width:100%; padding:8px; background:#1f2937; color:#fff; border:1px solid #4b5563; border-radius:6px;" onchange="window.changeJobLocationFilter(this.value)">
+          <option value="All" ${selectedLoc === 'All' ? 'selected' : ''}>🌍 All Locations</option>
+          ${AVAILABLE_LOCATIONS.map(loc => `<option value="${loc}" ${selectedLoc === loc ? 'selected' : ''}>📍 ${loc}</option>`).join('')}
+        </select>
       </div>
+      <br/>
+    `;
 
-      <p id="authMsg" class="muted"></p>
-    </section>
+    const filteredJobs = selectedLoc === 'All' ? jobs : jobs.filter(j => j.location === selectedLoc);
 
-    <!-- DASHBOARD -->
-    <section class="grid-2" id="dashboard" style="display:none;">
-      <!-- Sidebar -->
-      <nav class="sidebar card">
-        <h3>Dashboard</h3>
-        <ul id="navList"></ul>
-      </nav>
+    let jobsHtml = `<h4>💼 Available Job Postings (${filteredJobs.length})</h4>`;
+    if (filteredJobs.length === 0) {
+      jobsHtml += `<p class="muted">Is location (${selectedLoc}) ke liye koi job available nahi hai.</p>`;
+    } else {
+      filteredJobs.forEach(j => {
+        const hasApplied = apps.find(a => a.jobId === j.id);
+        jobsHtml += `
+          <div class="hr-job-post" style="margin-bottom:12px; padding:12px; border:1px solid #374151; border-radius:8px; background:rgba(255,255,255,0.02)">
+            <strong>${j.title}</strong> - ${j.company} <span style="background:#1e3a8a; color:#fff; padding:3px 8px; border-radius:4px; font-size:11px; font-weight:bold; margin-left:8px;">📍 ${j.location || 'Remote'}</span><br/>
+            <small>Salary: ${j.salary} | Experience Req: ${j.exp}</small><br/>
+            Status: <span style="color:#34d399; font-weight:bold;">${hasApplied ? (hasApplied.status || 'Applied') : 'Not Applied'}</span><br/>
+            ${hasApplied ? '' : `<button class="btn small" style="margin-top:8px;" onclick="window.applyForJob('${j.id}')">Apply Now</button>`}
+          </div>`;
+      });
+    }
 
-      <!-- Content (all panels here) -->
-      <section class="content">
-        <!-- Entrepreneur Panel -->
-        <div id="entrepreneurPanel" class="card hidden">
-          <h3>Entrepreneur Dashboard</h3>
-          <p class="muted">Manage business profile, jobs, and HR tools.</p>
-        </div>
+    let historyHtml = `<h4 style="margin-top:20px;">📜 Active Company / Employment & Exit History</h4>`;
+    if (history.length === 0) historyHtml += `<p class="muted">No active joining or past employment record found.</p>`;
+    else {
+      history.forEach(h => {
+        historyHtml += `
+          <div class="readonly-box" style="margin-bottom:8px; border-left:4px solid ${h.type==='Exit'?'#ef4444':'#10b981'}">
+            <strong>Company/Dept:</strong> ${h.department || 'General'} | <strong>Position:</strong> ${h.position}<br/>
+            <strong>Date:</strong> ${h.date} | <strong>Record Type:</strong> ${h.type}<br/>
+            ${h.rating ? `<strong>Rating given by HR:</strong> ${h.rating}<br/>` : ''}
+            ${h.feedback ? `<strong>HR Feedback:</strong> ${h.feedback}` : ''}
+          </div>`;
+      });
+    }
 
-        <!-- Candidate Profile -->
-        <div id="candidateProfile" class="card hidden">
-          <h3>Candidate Profile</h3>
-          <div class="grid">
-            <div><label>Full name</label><input id="cName" type="text" /></div>
-            <div><label>Father's name</label><input id="cFather" type="text" /></div>
-            <div><label>Date of birth</label><input id="cDob" type="date" /></div>
-            <div><label>Country (ISO)</label><input id="cCountry" type="text" value="IN" /></div>
-            <div><label>Address</label><input id="cAddr" type="text" /></div>
-            <div><label>Phone</label><input id="cPhone" type="tel" /></div>
-            <div><label>Email</label><input id="cEmail" type="email" /></div>
-            <div><label>Qualification</label><input id="cQual" type="text" /></div>
-          </div>
-          <div class="row">
-            <label>Document</label><input id="cDoc" type="file" accept=".pdf,image/*" />
-          </div>
-          <div class="row">
-            <button id="saveProfileBtn" class="btn">Save Profile</button>
-            <button id="initWorkIdBtn" class="btn-secondary">Generate WorkID QR</button>
-          </div>
-          <p id="profileMsg" class="muted"></p>
-        </div>
+    liveContainer.innerHTML = "<hr style='margin:20px 0;'/>" + filterHtml + jobsHtml + historyHtml;
+  }
 
-        <!-- WorkID Card -->
-        <div id="workIdCard" class="card hidden">
-          <h3>WorkID Card</h3>
-          <div class="card preview">
-            <div class="wid-row">
-              <div>
-                <div class="wid-title" id="widName">Name</div>
-                <div class="wid-sub" id="widNumber">WID-IN-YYYY-000000</div>
-                <div class="badge" id="widStatus">Unverified</div>
-              </div>
-              <div id="qrBox"></div>
-            </div>
-          </div>
-          <div class="row">
-            <button id="downloadCardBtn" class="btn">Download PNG</button>
-            <button id="copyWorkIdBtn" class="btn-secondary">Copy WorkID</button>
-            <button id="shareWorkIdBtn" class="btn-outline">Share</button>
-          </div>
-        </div>
+  window.changeJobLocationFilter = function(value) {
+    sessionStorage.setItem('selectedJobLocation', value);
+    renderCandidateDashboardLive();
+  };
 
-        <!-- Employment History -->
-        <div id="employmentHistory" class="card hidden">
-          <h3>Employment History</h3>
-          <div class="grid">
-            <div><label>Company</label><input id="eCompany" type="text" /></div>
-            <div><label>Job title</label><input id="eTitle" type="text" /></div>
-            <div><label>Start date</label><input id="eStart" type="date" /></div>
-            <div><label>End date</label><input id="eEnd" type="date" /></div>
-            <div><label>HR name</label><input id="eHrName" type="text" /></div>
-            <div><label>HR email</label><input id="eHrEmail" type="email" /></div>
-            <div><label>HR phone</label><input id="eHrPhone" type="tel" /></div>
-          </div>
-          <div class="row">
-            <label>Documents</label><input id="eDoc" type="file" accept=".pdf,image/*" />
-          </div>
-          <div class="row">
-            <button id="addClaimBtn" class="btn">Add Employment</button>
-          </div>
-          <div id="claimsList" class="list"></div>
-        </div>
+  window.applyForJob = function(jobId) {
+    const user = currentUser();
+    if (!user) return;
+    const apps = getStore('job_applications');
+    if (apps.find(a => a.jobId === jobId && a.candidateId === user.id)) return;
 
-          <!-- ================= HR SECTIONS ================= -->
+    apps.push({
+      id: 'app_' + Date.now(),
+      jobId: jobId,
+      candidateId: user.id,
+      workId: user.workId,
+      name: user.profile.name || user.email,
+      status: 'Applied'
+    });
+    setStore('job_applications', apps);
+    alert('✅ Job Application Submitted Successfully!');
+    renderCandidateDashboardLive();
+  };
 
-        <!-- HR: Company setup -->
-        <div id="hrCompany" class="card hidden">
-          <h3>Company verification</h3>
-          <div class="grid">
-            <div>
-              <label>Legal name</label>
-              <input id="coName" type="text" />
-            </div>
-            <div>
-              <label>Domain</label>
-              <input id="coDomain" type="text" placeholder="company.com" />
-            </div>
-            <div>
-              <label>GST/CIN</label>
-              <input id="coCin" type="text" />
-            </div>
-            <div>
-              <label>Address</label>
-              <input id="coAddr" type="text" placeholder="Street / Area / Landmark" />
-            </div>
-            <div>
-              <label>City</label>
-              <input id="coCity" type="text" placeholder="e.g. Sagar" />
-            </div>
-            <div>
-              <label>State</label>
-              <input id="coState" type="text" placeholder="e.g. Madhya Pradesh" />
-            </div>
-            <div>
-              <label>PIN Code</label>
-              <input id="coPin" type="text" maxlength="6" placeholder="e.g. 470001" />
-            </div>
-          </div>
-          <div class="row">
-            <button id="submitCompanyBtn" class="btn">Submit for admin verification</button>
-          </div>
-          <p id="companyMsg" class="muted"></p>
-        </div>
+  function renderHRReqListsLive() {
+    const reqs = getStore('verification_requests');
+    const apps = getStore('job_applications');
+    
+    const container = $('hrReqList') || document.createElement('div');
+    let html = `<h4>📥 Received Job Applications</h4>`;
+    if (apps.length === 0) html += `<p class="muted">No applications received yet.</p>`;
+    else {
+      apps.forEach(a => {
+        html += `
+          <div class="item" style="padding:10px; border-bottom:1px solid #374151; margin-bottom:8px;">
+            <strong>Name:</strong> ${a.name} (${a.workId}) | <strong>Status:</strong> <span style="color:#f59e0b">${a.status}</span><br/>
+            <button class="btn small" style="margin-top:5px;" onclick="window.scheduleInterview('${a.id}')">Schedule Interview</button>
+          </div>`;
+      });
+    }
+    container.innerHTML = html;
 
-        <!-- HR: Verification dashboard -->
-        <div id="hrVerify" class="card hidden">
-          <h3>HR Verification dashboard</h3>
-          <p class="muted">Welcome, HR Manager. Candidate WorkID validate karein, access request bhejein, aur history dekhein.</p>
-          <div class="row">
-            <input id="lookupWorkId" type="text" placeholder="Enter WorkID or scan QR payload"/>
-            <button id="requestAccessBtn" class="btn">Request access</button>
-          </div>
-          <div id="hrReqList" class="list"></div>
-          <div id="hrClaims" class="list"></div>
-        </div>
+    const incomingBox = $('hrClaims') || document.createElement('div');
+    let incHtml = `<h4>📬 Incoming Verification Requests from other HRs</h4>`;
+    if (reqs.length === 0) incHtml += `<p class="muted">No verification requests received.</p>`;
+    else {
+      reqs.forEach(r => {
+        incHtml += `
+          <div class="hr-job-post" style="padding:10px; margin-bottom:10px; border:1px solid #4b5563;">
+            <strong>WorkID:</strong> ${r.workId} | <strong>Requested By:</strong> ${r.fromHrEmail}<br/>
+            <strong>Status:</strong> <span style="color:#f59e0b">${r.status}</span> | <strong>Remarks:</strong> ${r.remarks || 'None'}<br/>
+            <div style="margin-top:6px; display:flex; gap:6px;">
+               <button class="btn small" onclick="window.actionVerification('${r.id}', 'Verified', '')">Mark Verified</button>
+               <button class="btn-outline small" onclick="window.actionVerification('${r.id}', 'Not Matched', prompt('Enter problem/reason:'))">Reject / Flag Issue</button>
+            </div>
+          </div>`;
+      });
+    }
+    incomingBox.innerHTML = incHtml;
 
-        <!-- HR: Tools panel -->
-        <div id="hrPanelTools" class="card hidden">
-          <h3>HR Tools</h3>
+    renderChatLive();
+  }
 
-          <!-- Candidate Joining -->
-          <div class="hr-section">
-            <h4>Candidate Joining</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrJoinWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Joining Date</label>
-                <input id="hrJoinDate" type="date" />
-              </div>
-              <div>
-                <label>Position</label>
-                <input id="hrJoinPosition" type="text" placeholder="e.g. Software Engineer" />
-              </div>
-              <div>
-                <label>Department</label>
-                <input id="hrJoinDept" type="text" placeholder="e.g. IT / HR / Finance" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrConfirmJoiningBtn" class="btn">Confirm Joining</button>
-            </div>
-          </div>
+  window.scheduleInterview = function(appId) {
+    const apps = getStore('job_applications');
+    const a = apps.find(x => x.id === appId);
+    if (a) {
+      const dateTime = prompt("Enter Interview Date and Time:");
+      if (dateTime) {
+        a.status = `Interview Scheduled at ${dateTime}`;
+        setStore('job_applications', apps);
+        alert('✅ Interview Scheduled!');
+        renderHRReqListsLive();
+      }
+    }
+  };
 
-          <!-- Job Posting -->
-          <div class="hr-section">
-            <h4>Post a Job</h4>
-            <div class="grid">
-              <!-- Basic details -->
-              <div>
-                <label>Job Title</label>
-                <input id="hrJobTitle" type="text" placeholder="e.g. Frontend Developer" />
-              </div>
-              <div>
-                <label>Department / Team</label>
-                <input id="hrJobDept" type="text" placeholder="e.g. Engineering / Sales" />
-              </div>
-              <div>
-                <label>Location</label>
-                <input id="hrJobLocation" type="text" placeholder="e.g. Remote / Delhi" />
-              </div>
-              <div>
-                <label>Employment Type</label>
-                <select id="hrJobType">
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Contract</option>
-                  <option>Internship</option>
-                </select>
-              </div>
-              <div>
-                <label>Shift Type</label>
-                <select id="hrJobShift">
-                  <option>General</option>
-                  <option>Night</option>
-                  <option>Rotational</option>
-                </select>
-              </div>
-              <!-- Compensation & level -->
-              <div>
-                <label>Experience Range (years)</label>
-                <input id="hrExpRange" type="text" placeholder="1–3 years" />
-              </div>
-              <div>
-                <label>Salary Range</label>
-                <input id="hrSalaryRange" type="text" placeholder="3–5 LPA / 20–30k" />
-              </div>
-              <div>
-                <label>Level / Band</label>
-                <input id="hrJobLevel" type="text" placeholder="Junior / Mid / Senior" />
-              </div>
-              <div>
-                <label>Preferred Notice Period</label>
-                <select id="hrNoticePref">
-                  <option>Immediate joiner</option>
-                  <option>15 days</option>
-                  <option>30 days</option>
-                  <option>60 days</option>
-                </select>
-              </div>
-              <!-- Skills & eligibility -->
-              <div>
-                <label>Required Skills</label>
-                <input id="hrReqSkills" type="text" placeholder="React, Node.js, SQL" />
-              </div>
-              <div>
-                <label>Good-to-have Skills</label>
-                <input id="hrGoodSkills" type="text" placeholder="AWS, Docker, Microservices" />
-              </div>
-              <div>
-                <label>Minimum Qualification</label>
-                <input id="hrMinEdu" type="text" placeholder="Any Graduate / B.Tech" />
-              </div>
-              <div>
-                <label>Mandatory Certifications</label>
-                <input id="hrCerts" type="text" placeholder="e.g. AZ-900, ITIL" />
-              </div>
-              <!-- WorkID specific filters -->
-              <div>
-                <label>Required WorkID Status</label>
-                <select id="hrWidStatusReq">
-                  <option>Any</option>
-                  <option>Verified only</option>
-                </select>
-              </div>
-              <div>
-                <label>Minimum WorkID Rating</label>
-                <select id="hrMinRating">
-                  <option>Any</option>
-                  <option>3+ stars</option>
-                  <option>4+ stars</option>
-                  <option>5 stars only</option>
-                </select>
-              </div>
-              <div>
-                <label>Minimum Attendance (%)</label>
-                <input id="hrMinAttendance" type="number" min="0" max="100" placeholder="80" />
-              </div>
-              <div>
-                <label>Background Check Level</label>
-                <select id="hrBgLevel">
-                  <option>Basic</option>
-                  <option>Standard</option>
-                  <option>Advanced</option>
-                </select>
-              </div>
-              <!-- Process & tracking -->
-              <div>
-                <label>Number of Openings</label>
-                <input id="hrOpenings" type="number" min="1" value="1" />
-              </div>
-              <div>
-                <label>Deadline</label>
-                <input id="hrJobDeadline" type="date" />
-              </div>
-              <div>
-                <label>Hiring Manager Name</label>
-                <input id="hrHiringManager" type="text" placeholder="Rohit Kumar" />
-              </div>
-              <div>
-                <label>Hiring Manager Email</label>
-                <input id="hrHiringEmail" type="email" placeholder="hr@company.com" />
-              </div>
-              <div>
-                <label>Job Code / Requisition ID</label>
-                <input id="hrJobCode" type="text" placeholder="JOB-2025-001" />
-              </div>
-              <div>
-                <label>Visibility</label>
-                <select id="hrVisibility">
-                  <option>Public</option>
-                  <option>Internal only</option>
-                  <option>Referral only</option>
-                </select>
-              </div>
-            </div>
-            <div class="row">
-              <div style="flex:1;">
-                <label>Job Description</label>
-                <textarea id="hrJobDesc" rows="4"
-                  placeholder="Responsibilities, tech stack, culture, benefits, etc."></textarea>
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrPostJobBtn" class="btn">Post Job</button>
-            </div>
-          </div>
+  window.actionVerification = function(id, status, reason) {
+    const reqs = getStore('verification_requests');
+    const r = reqs.find(x => x.id === id);
+    if (r) {
+      r.status = status;
+      if (reason) r.remarks = reason;
+      setStore('verification_requests', reqs);
+      
+      if (status === 'Not Matched') {
+         const users = getStore('users');
+         const u = users.find(x => x.workId === r.workId);
+         if (u) { u.profile.status = 'Issue Flagged'; setStore('users', users); }
+      }
+      alert(`✅ Request updated to: ${status}`);
+      renderHRReqListsLive();
+    }
+  };
 
-          <!-- Attendance Tracker -->
-          <div class="hr-section">
-            <h4>Attendance Tracker</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrAttWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Date</label>
-                <input id="hrAttDate" type="date" />
-              </div>
-              <div>
-                <label>Status</label>
-                <select id="hrAttStatus">
-                  <option>Present</option>
-                  <option>Absent</option>
-                  <option>Leave</option>
-                </select>
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrMarkAttendanceBtn" class="btn">Mark Attendance</button>
-            </div>
-            <table class="hr-attendance-table">
-              <thead>
-                <tr><th>Date</th><th>Status</th></tr>
-              </thead>
-              <tbody id="hrAttTableBody">
-                <tr><td>2025-12-11</td><td>Present</td></tr>
-              </tbody>
-            </table>
-          </div>
+  function renderChatLive() {
+    const chatBox = $('hrChatMessages');
+    if (!chatBox) return;
+    const chats = getStore('hr_chats');
+    chatBox.innerHTML = chats.map(c => `<div><strong>${c.sender}:</strong> ${c.text} <small class="muted">(${c.time})</small></div>`).join('');
+  }
 
-          <!-- Exit Management -->
-          <div class="hr-section">
-            <h4>Exit Management</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrExitWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Exit Date</label>
-                <input id="hrExitDate" type="date" />
-              </div>
-              <div>
-                <label>Upload Relieving Letter (PDF)</label>
-                <input id="hrExitLetter" type="file" accept=".pdf" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="hrSubmitExitBtn" class="btn">Submit Exit</button>
-            </div>
-          </div>
+  // ================= CANDIDATE OPERATIONS =================
+  function bindCandidate() {
+    $('saveProfileBtn')?.addEventListener('click', () => {
+      if (!requireSession('candidate')) return;
+      const user = currentUser();
+      if (!user) return;
+      
+      const oldStatus = user.profile?.status || 'Unverified';
+      user.profile = {
+        name: $('cName')?.value.trim(),
+        father: $('cFather')?.value.trim(),
+        dob: $('cDob')?.value,
+        country: $('cCountry')?.value.trim() || 'IN',
+        address: $('cAddr')?.value.trim(),
+        phone: $('cPhone')?.value.trim(),
+        email: $('cEmail')?.value.trim(),
+        qualification: $('cQual')?.value.trim(),
+        status: oldStatus
+      };
+      saveUser(user);
+      $('profileMsg').textContent = 'Profile saved!';
+      renderCandidateDashboardLive();
+    });
 
-          <!-- Feedback & Rating -->
-          <div class="hr-section">
-            <h4>Candidate Feedback</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="hrFbWorkId" type="text" placeholder="e.g. WID-2025-00123" />
-              </div>
-              <div>
-                <label>Star Rating</label>
-                <select id="hrFbRating">
-                  <option>⭐</option>
-                  <option>⭐⭐</option>
-                  <option>⭐⭐⭐</option>
-                  <option>⭐⭐⭐⭐</option>
-                  <option>⭐⭐⭐⭐⭐</option>
-                </select>
-              </div>
-            </div>
-            <label>Feedback</label>
-            <textarea id="hrFbText" rows="3" placeholder="Write feedback..."></textarea>
-            <div class="row">
-              <button id="hrSubmitFeedbackBtn" class="btn">Submit Feedback</button>
-            </div>
-          </div>
+    $('initWorkIdBtn')?.addEventListener('click', () => {
+      if (!requireSession('candidate')) return;
+      const user = currentUser();
+      if (!user) return;
+      
+      const countryCode = user.profile?.country || $('cCountry')?.value.trim() || 'IN';
+      user.workId = generateWorkId(countryCode);
+      user.profile.status = user.profile.status || 'Unverified';
+      
+      saveUser(user);
+      showView('workIdCard');
+      updateWorkIdCardUI();
+    });
+  }
 
-          <!-- Candidate History Lookup -->
-          <div class="hr-section">
-            <h4>Candidate History Lookup</h4>
-            <div class="hr-search-box">
-              <input id="hrHistoryWorkId" type="text" placeholder="Enter WorkID e.g. WID-2025-00123" />
-              <button id="hrHistorySearchBtn">Search</button>
-            </div>
-            <div id="hrHistoryResult" class="hr-feedback-box">
-              <strong>Result:</strong> Candidate found. Last worked at XYZ Corp. Rated ⭐⭐⭐⭐. Exit: 2025-10-15.
-            </div>
-          </div>
+  // ================= HR & ENTREPRENEUR OPERATIONAL LOGIC =================
+  function bindHR() {
+    $('hrConfirmJoiningBtn')?.addEventListener('click', () => {
+      if (!requireSession('hr,entrepreneur')) return;
+      const wid = $('hrJoinWorkId')?.value.trim();
+      const date = $('hrJoinDate')?.value;
+      const pos = $('hrJoinPosition')?.value.trim();
+      const dept = $('hrJoinDept')?.value.trim();
 
-          <!-- Incoming Verification Requests -->
-          <div class="hr-section">
-            <h4>Incoming Verification Requests</h4>
-            <div class="hr-job-post">
-              <div class="title">Request from HR: ABC Pvt Ltd</div>
-              <div class="meta">Candidate: WID-2025-00123 | Requested on: 2025-12-10</div>
-              <div class="readonly-box">
-                <p><strong>Name:</strong> Candidate Name</p>
-                <p><strong>Last Company:</strong> XYZ Corp (2023–2025)</p>
-              </div>
-              <label>Reply / Verification</label>
-              <textarea id="hrIncomingReply" rows="2" placeholder="e.g. Verified. Candidate worked from Jan 2023 to Oct 2025. No issues."></textarea>
-              <div class="row">
-                <button id="hrMarkVerifiedBtn" class="btn">Mark as Verified</button>
-                <button id="hrMarkNotMatchedBtn" class="btn-outline">Not Matched</button>
-              </div>
-              <div class="hr-section">
-                <h4>HR–HR Chat (for this request)</h4>
-                <div id="hrChatMessages" class="chat-box"></div>
-                <div class="row">
-                  <input id="hrChatInput" type="text" placeholder="Type a message..." />
-                  <button id="hrChatSendBtn" class="btn small">Send</button>
-                </div>
-              </div>
-            </div>
-          </div>
+      if (!wid || !date || !pos) { alert('Fill mandatory fields!'); return; }
 
-          <!-- Outgoing Verification Requests (simple demo form) -->
-          <div class="hr-section">
-            <h4>Outgoing Verification Request</h4>
-            <div class="grid">
-              <div>
-                <label>Candidate WorkID</label>
-                <input id="outReqWorkId" type="text" placeholder="WID-..." />
-              </div>
-              <div>
-                <label>Target Company</label>
-                <input id="outReqCompany" type="text" placeholder="ABC Pvt Ltd" />
-              </div>
-              <div>
-                <label>Target HR Email</label>
-                <input id="outReqHrEmail" type="email" placeholder="hr@company.com" />
-              </div>
-              <div>
-                <label>Reason</label>
-                <input id="outReqReason" type="text" placeholder="Employment verification" />
-              </div>
-            </div>
-            <div class="row">
-              <button id="outReqSendBtn" class="btn">Send Request</button>
-            </div>
-            <p id="outReqMsg" class="muted"></p>
-          </div>
-        </div>
+      const users = getStore('users');
+      const candidate = users.find(u => u.workId === wid);
+      if (!candidate) { alert('Invalid WorkID!'); return; }
 
-        <!-- Admin Panel -->
-        <div id="adminPanel" class="card hidden">
-          <h3>Admin Controls</h3>
-          <div class="row auth-tabs">
-            <button data-admin-tab="overview" class="btn small auth-tab active">Overview</button>
-            <button data-admin-tab="users" class="btn-outline small auth-tab">Users</button>
-            <button data-admin-tab="hrApprove" class="btn-outline small auth-tab">HR Approvals</button>
-          </div>
-          <div id="adminContent" class="mt-2">
-            <p class="muted">Select tab for admin data.</p>
-          </div>
-        </div>
-      </section>
-    </section>
-  </main>
+      candidate.profile.status = 'Verified';
+      saveUser(candidate);
 
-  <script src="app.js"></script>
-</body>
-</html>
+      const history = getStore('employment_history');
+      history.push({ id: 'h_'+Date.now(), workId: wid, date, position: pos, department: dept, type: 'Joining' });
+      setStore('employment_history', history);
+
+      alert(`✅ Joining confirmed for ${candidate.profile.name || wid}!`);
+    });
+
+    $('hrPostJobBtn')?.addEventListener('click', () => {
+      if (!requireSession('hr,entrepreneur')) return;
+      const jobs = getStore('posted_jobs');
+      const selectedJobLocation = $('hrJobLocationDropdown')?.value || 'Remote';
+
+      jobs.push({
+        id: 'job_' + Date.now(),
+        title: $('hrJobTitle')?.value.trim(),
+        company: $('hrHiringManager')?.value || 'Active Partner Enterprise',
+        location: selectedJobLocation,
+        salary: $('hrSalaryRange')?.value || 'Negotiable',
+        exp: $('hrExpRange')?.value || 'Any'
+      });
+      setStore('posted_jobs', jobs);
+      alert('🚀 Job Posted Successfully!');
+    });
+
+    $('hrMarkAttendanceBtn')?.addEventListener('click', () => {
+      const wid = $('hrAttWorkId')?.value.trim();
+      const date = $('hrAttDate')?.value;
+      const status = $('hrAttStatus')?.value;
+      if(!wid || !date) return alert('Enter data');
+
+      const tbody = $('hrAttTableBody');
+      if(tbody) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${date}</td><td>${status} (${wid})</td>`;
+        tbody.prepend(tr);
+      }
+      alert('Attendance tracked!');
+    });
+
+    $('hrSubmitExitBtn')?.addEventListener('click', () => {
+      if (!requireSession('hr,entrepreneur')) return;
+      const wid = $('hrExitWorkId')?.value.trim();
+      const date = $('hrExitDate')?.value;
+      if (!wid || !date) return alert('Enter WorkID and Exit date');
+
+      const history = getStore('employment_history');
+      history.push({ id: 'h_'+Date.now(), workId: wid, date, position: 'Relieved from Duty', department: 'Ex-Employee', type: 'Exit' });
+      setStore('employment_history', history);
+
+      const users = getStore('users');
+      const u = users.find(x => x.workId === wid);
+      if(u) { u.profile.status = 'Unverified (Settled)'; saveUser(u); }
+
+      alert(`⚠️ Exit Process Completed for ${wid}.`);
+    });
+
+    $('hrSubmitFeedbackBtn')?.addEventListener('click', () => {
+      const wid = $('hrFbWorkId')?.value.trim();
+      const rating = $('hrFbRating')?.value;
+      const text = $('hrFbText')?.value.trim();
+
+      const history = getStore('employment_history');
+      const item = history.reverse().find(x => x.workId === wid);
+      if (item) {
+        item.rating = rating;
+        item.feedback = text;
+        setStore('employment_history', history.reverse());
+        alert('⭐ Feedback added!');
+      } else {
+        alert('No employment record found.');
+      }
+    });
+
+    $('hrHistorySearchBtn')?.addEventListener('click', () => {
+      const wid = $('hrHistoryWorkId')?.value.trim();
+      const history = getStore('employment_history').filter(x => x.workId === wid);
+      const resEl = $('hrHistoryResult');
+      if(history.length === 0) {
+        if (resEl) resEl.innerHTML = "No history found.";
+      } else {
+        if (resEl) resEl.innerHTML = history.map(h => `<div>• ${h.date}: ${h.type} as ${h.position}</div>`).join('');
+      }
+    });
+
+    $('hrChatSendBtn')?.addEventListener('click', () => {
+      const txt = $('hrChatInput')?.value.trim();
+      if(!txt) return;
+      const chats = getStore('hr_chats');
+      chats.push({ sender: state.session.email || 'HR Manager', text: txt, time: new Date().toLocaleTimeString() });
+      setStore('hr_chats', chats);
+      if ($('hrChatInput')) $('hrChatInput').value = '';
+      renderChatLive();
+    });
+
+    $('outReqSendBtn')?.addEventListener('click', () => {
+      if (!requireSession('hr,entrepreneur')) return;
+      const reqs = getStore('verification_requests');
+      reqs.push({
+        id: 'req_' + Date.now(),
+        workId: $('outReqWorkId')?.value.trim(),
+        targetCompany: $('outReqCompany')?.value.trim(),
+        fromHrEmail: state.session.email || 'hr@origin.com',
+        status: 'Pending Verification',
+        remarks: $('outReqReason')?.value.trim()
+      });
+      setStore('verification_requests', reqs);
+      if ($('outReqMsg')) $('outReqMsg').textContent = '✅ Request sent to recipient HR.';
+      renderHRReqListsLive();
+    });
+  }
+
+  function bindAdmin() {}
+  function bindFeedback() {}
+  
+  function bindLogout() {
+    $('logoutBtn')?.addEventListener('click', () => {
+      state.session = null; currentMobileOtp = null; currentEmailOtp = null; otpAuth = null;
+      $('dashboard')?.classList.add('hidden');
+      showView('authLoginBox');
+    });
+  }
+
+  function requireSession(allowedRoles) {
+    if (!state.session) { alert('Please login first.'); return false; }
+    const mappedRole = getMappedRole(state.session.role);
+    if (allowedRoles && !allowedRoles.split(',').includes(mappedRole)) { alert(`Access denied.`); return false; }
+    return true;
+  }
+
+  function generateWorkId(country) {
+    const year = new Date().getFullYear();
+    state.seqByYear[year] = (state.seqByYear[year] || 0) + 1;
+    return `WID-${country}-${year}-${String(state.seqByYear[year]).padStart(6, '0')}`;
+  }
+
+  function render() {
+    const d = $('dashboard');
+    if (!state.session) { if(d) d.style.display = 'none'; return; }
+    if(d) d.style.display = 'grid';
+    buildNavForRole(state.session.role);
+    const mappedRole = getMappedRole(state.session.role);
+    
+    const oldLocInput = $('hrJobLocation');
+    if (oldLocInput && oldLocInput.tagName === 'INPUT') {
+      const selectNode = document.createElement('select');
+      selectNode.id = 'hrJobLocationDropdown';
+      selectNode.className = 'input';
+      selectNode.innerHTML = AVAILABLE_LOCATIONS.map(loc => `<option value="${loc}">📍 ${loc}</option>`).join('');
+      oldLocInput.parentNode.replaceChild(selectNode, oldLocInput);
+    }
+
+    if (mappedRole === 'candidate') { showView('candidateProfile'); renderCandidateDashboardLive(); }
+    else if (mappedRole === 'hr') { showView('hrPanelTools'); renderHRReqListsLive(); }
+    else showView('adminPanel');
+  }
+
+  function syncAdminData() {}
+})();
