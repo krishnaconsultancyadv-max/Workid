@@ -1,59 +1,326 @@
-// WorkID Advanced App Logic – Selection Dropdown Fixed Engine
+// WorkID Demo App Logic – localStorage POC (FULLY FIXED)
 (function(){
   'use strict';
   
+  // ================= GLOBALS =================
   const $ = (id) => document.getElementById(id);
   
   const state = {
-    session: null,
+    session: null, // {role, userId, email, mobile}
     seqByYear: {}
   };
   
   let currentOtp = null;
+  let otpAuth = null;
 
+  // ================= ROLE MAPPING =================
   function getMappedRole(role) {
     const roleMap = {
-      'superadmin': 'admin', 'admin': 'admin',
-      'entrepreneur': 'hr', 'hr': 'hr', 'candidate': 'candidate'
+      'superadmin': 'superadmin',
+      'stateadmin': 'stateadmin', 
+      'districtadmin': 'districtadmin',
+      'admin': 'admin',
+      'entrepreneur': 'hr',
+      'candidate': 'candidate',
+      'hr': 'hr'
     };
     return roleMap[role] || role;
   }
 
+  // ================= BOOT =================
   document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(syncAdminData, 100);
     bindAuth();
     bindTheme();
     bindNav();
-    bindCandidateLogic();
+    bindCandidate();
     bindHR();
+    bindAdmin();
+    bindFeedback();
     bindLogout();
     bindPasswordToggle();
     render();
   });
 
+  // ================= PASSWORD TOGGLE =================
   function bindPasswordToggle() {
     const passInput = $('loginPass');
     const toggleBtn = $('togglePass');
     if (!passInput || !toggleBtn) return;
+    
     toggleBtn.addEventListener('click', () => {
-      passInput.type = passInput.type === 'password' ? 'text' : 'password';
+      if (passInput.type === 'password') {
+        passInput.type = 'text';
+        toggleBtn.setAttribute('aria-label', 'Hide password');
+        $('eyePupil')?.setAttribute('fill', 'transparent');
+      } else {
+        passInput.type = 'password';
+        toggleBtn.setAttribute('aria-label', 'Show password');
+        $('eyePupil')?.setAttribute('fill', '#4b5563');
+      }
     });
   }
 
+  // ================= THEME =================
   function bindTheme() {
-    $('themeSelect')?.addEventListener('change', (e) => {
-      document.documentElement.classList.toggle('dark', e.target.value === 'dark');
+    const select = $('themeSelect');
+    if (!select) return;
+    select.addEventListener('change', () => {
+      document.documentElement.classList.toggle('dark', select.value === 'dark');
     });
   }
 
-  function getStore(key) {
-    try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+  // ================= AUTH + OTP + TABS + FORGOT PASSWORD =================
+  function bindAuth() {
+    const sendOtpBtn = $('sendOtpBtn');
+    const verifyOtpBtn = $('verifyOtpBtn');
+    const passwordLoginBtn = $('passwordLoginBtn');
+    const forgotBtn = $('forgotBtn');
+    const resetPasswordBtn = $('resetPasswordBtn');
+
+    // PASSWORD LOGIN (step 1)
+    if (passwordLoginBtn) {
+      passwordLoginBtn.addEventListener('click', () => {
+        const role = $('roleSelect')?.value || 'candidate';
+        const mobile = $('mobileInput')?.value.trim();
+        const email = $('emailInput')?.value.trim();
+        const pass = $('loginPass')?.value;
+        const msgEl = $('authMsg');
+        
+        if (!mobile && !email) {
+          msgEl.textContent = 'Mobile ya email required.';
+          return;
+        }
+        if (!pass) {
+          msgEl.textContent = 'Password required.';
+          return;
+        }
+        
+        const auth = { role, mobile, email };
+        const user = getUserByEmailOrMobile(auth);
+        
+        if (!user) {
+          msgEl.textContent = 'User not found. Pehle sign-up karein.';
+          return;
+        }
+        
+        state.session = { ...auth, userId: user.id, passwordOk: true };
+        msgEl.textContent = 'Password accepted (demo). Ab OTP verify karein.';
+      });
+    }
+
+    // OTP SEND (step 2)
+    if (sendOtpBtn) {
+      sendOtpBtn.addEventListener('click', () => {
+        const role = $('roleSelect')?.value || 'candidate';
+        const mobile = $('mobileInput')?.value.trim();
+        const email = $('emailInput')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!mobile && !email) {
+          msgEl.textContent = 'Mobile ya email required.';
+          return;
+        }
+        if (!state.session || !state.session.passwordOk) {
+          msgEl.textContent = 'Pehle password se login karein.';
+          return;
+        }
+        
+        currentOtp = generateOtp();
+        otpAuth = { role, mobile, email };
+        alert('Demo OTP: ' + currentOtp);
+        msgEl.textContent = 'OTP sent.';
+      });
+    }
+
+    // OTP VERIFY
+    if (verifyOtpBtn) {
+      verifyOtpBtn.addEventListener('click', () => {
+        const given = $('otpInput')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!given) {
+          msgEl.textContent = 'OTP enter karein.';
+          return;
+        }
+        if (!currentOtp || !otpAuth) {
+          msgEl.textContent = 'OTP request pehle bhejein.';
+          return;
+        }
+        if (given !== currentOtp) {
+          msgEl.textContent = 'Incorrect OTP.';
+          return;
+        }
+        
+        const auth = otpAuth;
+        const user = getUserByEmailOrMobile(auth);
+        
+        if (!user) {
+          msgEl.textContent = 'User not found. Pehle sign-up karein.';
+          return;
+        }
+        
+        state.session = { ...auth, userId: user.id };
+        currentOtp = null;
+        otpAuth = null;
+        msgEl.textContent = '✅ Logged in!';
+        buildNavForRole(auth.role);
+        render();
+      });
+    }
+
+    // FORGOT PASSWORD - Send OTP
+    if (forgotBtn) {
+      forgotBtn.addEventListener('click', () => {
+        const email = $('fpEmail')?.value.trim();
+        const mobile = $('fpMobile')?.value.trim();
+        const msgEl = $('authMsg');
+        
+        if (!email && !mobile) {
+          msgEl.textContent = 'Email ya mobile enter kariye.';
+          return;
+        }
+        
+        const resetOtp = generateOtp();
+        sessionStorage.setItem('resetOtp', resetOtp);
+        sessionStorage.setItem('resetEmailOrMobile', email || mobile);
+        
+        alert(`Demo Reset OTP: ${resetOtp}
+(${email || mobile} pe bheja)`);
+        msgEl.textContent = 'OTP bhej diya. Niche enter kariye.';
+        
+        const resetSection = $('resetOtpSection');
+        if (resetSection) resetSection.style.display = 'flex';
+      });
+    }
+
+    // PASSWORD RESET COMPLETE
+    if (resetPasswordBtn) {
+      resetPasswordBtn.addEventListener('click', () => {
+        const otp = $('resetOtpInput')?.value.trim();
+        const newPass = $('newPasswordInput')?.value;
+        const confirmPass = $('newPasswordConfirm')?.value;
+        const msgEl = $('resetMsg') || $('authMsg');
+        
+        if (!otp || !newPass || !confirmPass) {
+          msgEl.textContent = 'OTP aur new password required.';
+          return;
+        }
+        if (newPass.length < 6) {
+          msgEl.textContent = 'Password minimum 6 characters.';
+          return;
+        }
+        if (newPass !== confirmPass) {
+          msgEl.textContent = 'Passwords match nahi kar rahe.';
+          return;
+        }
+        
+        const storedOtp = sessionStorage.getItem('resetOtp');
+        if (!storedOtp || otp !== storedOtp) {
+          msgEl.textContent = '❌ Invalid OTP.';
+          return;
+        }
+        
+        const resetEmailOrMobile = sessionStorage.getItem('resetEmailOrMobile');
+        const users = getStore('users') || [];
+        const user = users.find(u => 
+          u.email === resetEmailOrMobile || u.mobile === resetEmailOrMobile
+        );
+        
+        if (!user) {
+          msgEl.textContent = '❌ User not found.';
+          return;
+        }
+        
+        user.password = newPass;
+        setStore('users', users);
+        
+        sessionStorage.removeItem('resetOtp');
+        sessionStorage.removeItem('resetEmailOrMobile');
+        
+        msgEl.textContent = '✅ Password reset successful!';
+        $('authMsg').textContent = 'Login tab se new password use kariye.';
+        
+        setTimeout(() => {
+          $('resetOtpSection').style.display = 'none';
+        }, 2000);
+      });
+    }
+
+    // AUTH TABS
+    const tabs = ['tabLogin', 'tabSignup', 'tabForgot'];
+    const boxes = ['authLoginBox', 'authSignupBox', 'authForgotBox'];
+    
+    tabs.forEach((tabId, i) => {
+      const tab = $(tabId);
+      if (tab) {
+        tab.addEventListener('click', () => {
+          tabs.forEach(t => $(t)?.classList.remove('active'));
+          boxes.forEach(b => $(b)?.classList.add('hidden'));
+          tab.classList.add('active');
+          $(boxes[i])?.classList.remove('hidden');
+        });
+      }
+    });
+
+    // SIGNUP
+    const signupBtn = $('signupBtn');
+    if (signupBtn) {
+      signupBtn.addEventListener('click', () => {
+        const role = $('suRole')?.value || 'candidate';
+        const name = $('suName')?.value.trim();
+        const email = $('suEmail')?.value.trim();
+        const mob = $('suMobile')?.value.trim();
+        const p1 = $('suPass')?.value;
+        const p2 = $('suPass2')?.value;
+        const msgEl = $('authMsg');
+        
+        if (!name || !email || !mob || !p1 || !p2) {
+          msgEl.textContent = 'All fields required.';
+          return;
+        }
+        if (p1 !== p2) {
+          msgEl.textContent = 'Passwords match nahi kar rahe.';
+          return;
+        }
+        
+        const auth = { role, email, mobile: mob };
+        const existing = getUserByEmailOrMobile(auth);
+        
+        if (existing) {
+          msgEl.textContent = 'Email/mobile already registered.';
+          return;
+        }
+        
+        createUser(auth);
+        msgEl.textContent = '✅ Account created! Ab login kariye.';
+      });
+    }
   }
-  
-  function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+  function generateOtp() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  // ================= STORAGE =================
+  function getStore(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function setStore(key, val) {
+    localStorage.setItem(key, JSON.stringify(val));
+  }
 
   function getUserByEmailOrMobile(auth) {
     const users = getStore('users');
-    return users.find(u => (auth.email && u.email === auth.email) || (auth.mobile && u.mobile === auth.mobile)) || null;
+    return users.find(u => 
+      (auth.email && u.email === auth.email) || 
+      (auth.mobile && u.mobile === auth.mobile)
+    ) || null;
   }
 
   function createUser(auth) {
@@ -63,366 +330,248 @@
       role: auth.role,
       email: auth.email,
       mobile: auth.mobile,
-      password: 'demo123',
+      password: 'demo123', // Default for demo
       profile: {},
       workId: null,
-      verificationStatus: 'Unverified',
-      experiences: []
+      qrNonce: null
     };
     users.push(user);
     setStore('users', users);
     return user;
   }
 
-  function bindAuth() {
-    $('passwordLoginBtn')?.addEventListener('click', () => {
-      const role = $('roleSelect')?.value || 'candidate';
-      const mobile = $('mobileInput')?.value.trim();
-      const email = $('emailInput')?.value.trim();
-      if (!mobile && !email) { $('authMsg').textContent = 'Mobile/Email required.'; return; }
-      
-      let user = getUserByEmailOrMobile({ email, mobile });
-      if (!user) { user = createUser({ role, email, mobile }); }
-      
-      state.session = { role, mobile, email, userId: user.id };
-      $('authMsg').textContent = 'Password accepted. Ab OTP send karke verify karein.';
-    });
-
-    $('sendOtpBtn')?.addEventListener('click', () => {
-      if (!state.session) { $('authMsg').textContent = 'Pehle password login karein.'; return; }
-      currentOtp = Math.floor(100000 + Math.random() * 900000).toString();
-      alert('Demo OTP Code: ' + currentOtp);
-      $('authMsg').textContent = 'OTP sent successfully.';
-    });
-
-    $('verifyOtpBtn')?.addEventListener('click', () => {
-      const given = $('otpInput')?.value.trim();
-      if (given === currentOtp && state.session) {
-        $('authMsg').textContent = '✅ Logged In!';
-        render();
-      } else {
-        $('authMsg').textContent = '❌ Invalid OTP.';
-      }
-    });
-
-    const tabs = ['tabLogin', 'tabSignup', 'tabForgot'];
-    const boxes = ['authLoginBox', 'authSignupBox', 'authForgotBox'];
-    tabs.forEach((tabId, i) => {
-      $(tabId)?.addEventListener('click', () => {
-        tabs.forEach(t => $(t)?.classList.remove('active'));
-        boxes.forEach(b => $(b)?.classList.add('hidden'));
-        $(tabId).classList.add('active');
-        $(boxes[i])?.classList.remove('hidden');
-      });
-    });
+  function saveUser(user) {
+    const users = getStore('users');
+    const idx = users.findIndex(u => u.id === user.id);
+    if (idx >= 0) {
+      users[idx] = user;
+    } else {
+      users.push(user);
+    }
+    setStore('users', users);
   }
 
+  function currentUser() {
+    if (!state.session) return null;
+    const users = getStore('users');
+    return users.find(u => u.id === state.session.userId) || null;
+  }
+
+  // ================= NAVIGATION =================
   function bindNav() {
-    $('navList')?.addEventListener('click', (e) => {
+    const nav = $('navList');
+    if (!nav) return;
+    nav.addEventListener('click', (e) => {
       const li = e.target.closest('li[data-view]');
-      if (li?.dataset.view) showView(li.dataset.view);
+      if (li && li.dataset.view) {
+        showView(li.dataset.view);
+      }
     });
   }
 
   function buildNavForRole(role) {
     const nav = $('navList');
-    if (!nav) return; nav.innerHTML = '';
+    if (!nav) return;
+    nav.innerHTML = '';
+    
     const mappedRole = getMappedRole(role);
     
     if (mappedRole === 'candidate') {
-      nav.appendChild(navItem('candidateProfile', 'Candidate Profile'));
-      nav.appendChild(navItem('workIdCard', 'WorkID Card View'));
+      ['candidateProfile', 'workIdCard', 'employmentHistory', 'candidateVerifiedInfo'].forEach(id => {
+        nav.appendChild(navItem(id, id.replace(/([A-Z])/g, ' $1').toLowerCase()));
+      });
+    } else if (mappedRole === 'hr' || mappedRole === 'entrepreneur') {
+      ['hrCompany', 'hrVerify', 'hrPanelTools'].forEach(id => {
+        nav.appendChild(navItem(id, id.replace(/([A-Z])/g, ' $1').toLowerCase()));
+      });
     } else {
-      nav.appendChild(navItem('hrVerify', 'HR Verification Centre'));
-      nav.appendChild(navItem('hrCompany', 'HR Parameters'));
+      nav.appendChild(navItem('adminPanel', 'Admin'));
     }
   }
 
   function navItem(viewId, label) {
     const li = document.createElement('li');
-    li.textContent = label; li.dataset.view = viewId;
-    li.style.padding = "10px"; li.style.cursor = "pointer";
+    li.textContent = label;
+    li.dataset.view = viewId;
     return li;
   }
 
   function showView(id) {
     document.querySelectorAll('.content > *').forEach(el => el.classList.add('hidden'));
-    $(id)?.classList.remove('hidden');
+    const target = $(id);
+    if (target) target.classList.remove('hidden');
   }
 
-  // ================= SELECTION DROPDOWN LOGIC SYSTEM =================
-  function bindCandidateLogic() {
-    const typeSelect = $('candidateTypeSelect');
-    const expFields = $('experienceFields');
-    const expContainer = $('experienceContainer');
-    const genBtn = $('initWorkIdBtn');
-    const profileMsg = $('profileMsg');
-    let compCounter = 1;
-
-    function updateButtonState(isFresher, status) {
-      if (!genBtn) return;
-      if (isFresher || status === 'Verified') {
-        genBtn.disabled = false;
-        genBtn.removeAttribute('disabled');
-        genBtn.style.opacity = "1";
-        genBtn.style.cursor = "pointer";
-        genBtn.style.background = "#10B981"; 
-        genBtn.style.color = "#fff";
-      } else {
-        genBtn.disabled = true;
-        genBtn.setAttribute('disabled', 'true');
-        genBtn.style.opacity = "0.5";
-        genBtn.style.cursor = "not-allowed";
-        genBtn.style.background = "";
-      }
+  // ================= RENDER (FIXED - DASHBOARD SHOW!) =================
+function render() {
+  const dashboard = $('dashboard');
+  
+  if (!state.session) {
+    // Hide dashboard completely when not logged in
+    if (dashboard) {
+      dashboard.style.display = 'none';
     }
+    return;
+  }
+  
+  // ✅ SHOW DASHBOARD when logged in
+  if (dashboard) {
+    dashboard.style.display = 'grid';  // grid-2 layout
+    dashboard.classList.remove('hidden');
+  }
+  
+  // ✅ Build sidebar navigation
+  buildNavForRole(state.session.role);
+  
+  // ✅ Show default panel based on role
+  const mappedRole = getMappedRole(state.session.role);
+  const defaultViews = {
+    'candidate': 'candidateProfile',
+    'hr': 'hrCompany',
+    'entrepreneur': 'hrCompany',
+    'admin': 'adminPanel'
+  };
+  
+  const defaultView = defaultViews[mappedRole] || 'adminPanel';
+  showView(defaultView);
+  
+  console.log('✅ Rendered for role:', mappedRole, 'Panel:', defaultView);
+}
 
-    // Dynamic Change Event Listener for Selection Option
-    typeSelect?.addEventListener('change', () => {
-      const users = getStore('users');
-      const user = users.find(u => u.id === state.session.userId);
-      const currentStatus = user ? user.verificationStatus : 'Unverified';
-
-      if (typeSelect.value === 'fresher') {
-        if (expFields) expFields.style.display = 'none';
-        updateButtonState(true, currentStatus);
-        if (profileMsg) profileMsg.innerHTML = `<span style='color:#10B981;'>✓ Selection Mode: Fresher Profile active hai. 'Generate WorkID QR' button instantly active ho gaya hai!</span>`;
-      } else {
-        if (expFields) expFields.style.display = 'block';
-        updateButtonState(false, currentStatus);
-        if (profileMsg) profileMsg.innerHTML = `Selection Mode: Experienced. Status: <span style='color:orange;'>Pending HR Verification.</span>`;
-      }
-    });
-
-    // Add Dynamic Work Block
-    $('addMoreExpBtn')?.addEventListener('click', () => {
-      compCounter++;
-      const block = document.createElement('div');
-      block.className = "experience-block";
-      block.style = "border:1px solid #4a5568; padding:15px; border-radius:6px; margin-bottom:15px; position:relative;";
-      block.innerHTML = `
-        <h5 class="comp-title">Company #${compCounter}</h5>
-        <button type="button" class="rem-btn" style="position:absolute; top:10px; right:10px; background:red; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px; padding:2px 6px;">Remove</button>
-        <div class="grid">
-          <div><label>Company Name</label><input class="expCompany" type="text" /></div>
-          <div><label>Designation/Role</label><input class="expRole" type="text" /></div>
-          <div><label>Joining Date</label><input class="expStart" type="date" /></div>
-          <div><label>Relieving Date</label><input class="expEnd" type="date" /></div>
-        </div>
-        <div class="grid" style="margin-top:10px;">
-          <div><label>Relieving Letter</label><input class="expRelieveDoc" type="file" /></div>
-          <div><label>No Dues Certificate</label><input class="expNoDuesDoc" type="file" /></div>
-        </div>
-      `;
-      block.querySelector('.rem-btn').addEventListener('click', () => block.remove());
-      expContainer.appendChild(block);
-    });
-
-    // Save/Submit Form Action
+  // ================= CANDIDATE BINDING =================
+  function bindCandidate() {
+    // Profile save
     $('saveProfileBtn')?.addEventListener('click', () => {
-      const users = getStore('users');
-      const user = users.find(u => u.id === state.session.userId);
+      if (!requireSession('candidate')) return;
+      const user = currentUser();
       if (!user) return;
-
-      const isFresherMode = (typeSelect.value === 'fresher');
-
+      
       user.profile = {
-        name: $('cName').value.trim() || user.name || "Candidate Name",
-        father: $('cFather').value.trim(),
-        dob: $('cDob').value,
-        address: $('cAddr').value.trim(),
-        qualification: $('cQual').value.trim(),
-        isFresher: isFresherMode
+        name: $('cName')?.value.trim(),
+        father: $('cFather')?.value.trim(),
+        dob: $('cDob')?.value,
+        country: $('cCountry')?.value.trim() || 'IN',
+        address: $('cAddr')?.value.trim(),
+        phone: $('cPhone')?.value.trim(),
+        email: $('cEmail')?.value.trim(),
+        qualification: $('cQual')?.value.trim()
       };
-
-      user.experiences = [];
-
-      if (isFresherMode) {
-        user.verificationStatus = 'Verified';
-        if (profileMsg) profileMsg.innerHTML = `<span style='color:#10B981;'>✅ Profile saved successfully! Niche 'Generate WorkID QR' button par click karein.</span>`;
-      } else {
-        user.verificationStatus = 'Pending Verification';
-        document.querySelectorAll('.experience-block').forEach(b => {
-          const cName = b.querySelector('.expCompany').value.trim();
-          if (cName) {
-            user.experiences.push({
-              company: cName,
-              role: b.querySelector('.expRole').value.trim(),
-              start: b.querySelector('.expStart').value,
-              end: b.querySelector('.expEnd').value,
-              hasRelieving: b.querySelector('.expRelieveDoc').files.length > 0 ? "Attached" : "Not Provided",
-              hasNoDues: b.querySelector('.expNoDuesDoc').files.length > 0 ? "Attached" : "Not Provided"
-            });
-          }
-        });
-        if (profileMsg) profileMsg.innerHTML = `⚠️ Profile & documents submitted!<br>Status: <span style='color:orange; font-weight:bold;'>Pending HR Verification</span> (Experienced mode me HR verification mandatory hai).`;
-      }
-
-      const idx = users.findIndex(u => u.id === user.id);
-      users[idx] = user;
-      setStore('users', users);
-      
-      updateButtonState(isFresherMode, user.verificationStatus);
+      saveUser(user);
+      $('profileMsg').textContent = 'Profile saved!';
     });
 
-    // Generate Work ID
-    genBtn?.addEventListener('click', () => {
-      const users = getStore('users');
-      const user = users.find(u => u.id === state.session.userId);
-      const isFresherMode = (typeSelect.value === 'fresher');
-      
-      if (user && (isFresherMode || user.verificationStatus === 'Verified')) {
-        user.workId = `WID-IN-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-        user.verificationStatus = 'Verified';
-        
-        const idx = users.findIndex(u => u.id === user.id);
-        users[idx] = user;
-        setStore('users', users);
-        
-        $('widName').textContent = user.profile.name || user.name || "Candidate";
-        $('widNumber').textContent = user.workId;
-        $('widStatus').textContent = isFresherMode ? "Verified (Fresher)" : "Verified Live";
-        $('widStatus').style.background = "#10B981";
-        
-        showView('workIdCard');
-        alert("🎉 Aapka WorkID Card successfully generate ho gaya hai!");
-      } else {
-        alert("Pehle details submit karein ya check karein ki HR verification ho chuka hai.");
+    // WorkID generate
+    $('initWorkIdBtn')?.addEventListener('click', () => {
+      if (!requireSession('candidate')) return;
+      const user = currentUser();
+      if (!user.profile?.country) {
+        $('profileMsg').textContent = 'Complete profile first.';
+        return;
       }
+      user.workId = generateWorkId(user.profile.country);
+      user.qrNonce = Math.random().toString(36).slice(2, 10);
+      saveUser(user);
+      showView('workIdCard');
+      $('profileMsg').textContent = 'WorkID generated!';
     });
 
-    $('downloadCardBtn')?.addEventListener('click', () => {
-      alert("Downloading PNG Image Asset...");
+    // Add employment claim
+    $('addClaimBtn')?.addEventListener('click', () => {
+      if (!requireSession('candidate')) return;
+      const claim = {
+        id: 'clm_' + Date.now(),
+        candidateId: state.session.userId,
+        companyId: $('eCompany')?.value.trim(),
+        jobTitle: $('eTitle')?.value.trim(),
+        startDate: $('eStart')?.value,
+        endDate: $('eEnd')?.value,
+        status: 'pending'
+      };
+      const claims = getStore('claims') || [];
+      claims.push(claim);
+      setStore('claims', claims);
+      $('claimsList').innerHTML = '<div class="item">Claim added!</div>';
     });
   }
 
-  // ================= HR DASHBOARD CONNECTIVITY =================
+  // ================= HR BINDING =================
   function bindHR() {
     $('submitCompanyBtn')?.addEventListener('click', () => {
-      $('companyMsg').textContent = "Company parameters saved locally.";
+      if (!requireSession('hr,entrepreneur')) return;
+      const company = {
+        id: 'cmp_' + Date.now(),
+        legalName: $('coName')?.value.trim(),
+        domain: $('coDomain')?.value.trim(),
+        status: 'pending'
+      };
+      const companies = getStore('companies') || [];
+      companies.push(company);
+      setStore('companies', companies);
+      $('companyMsg').textContent = 'Company submitted for approval.';
     });
   }
 
-  function loadHRReviewPanel() {
-    const listContainer = $('hrCandidatesReviewList');
-    if (!listContainer) return;
-    listContainer.innerHTML = '';
-
-    const users = getStore('users').filter(u => u.role === 'candidate');
-
-    if (users.length === 0) {
-      listContainer.innerHTML = '<p class="muted">No candidates registered on this Node.</p>';
-      return;
-    }
-
-    users.forEach(user => {
-      const block = document.createElement('div');
-      block.style = "background:#2d3748; padding:15px; border-radius:8px; border: 1px solid #4a5568; margin-bottom:10px;";
-      
-      let expHTML = '';
-      if (user.profile?.isFresher) {
-        expHTML = `<p style="color:#4fd1c5; margin:5px 0;"><strong>✨ Candidate Status: Fresher</strong></p>`;
-      } else if (user.experiences && user.experiences.length > 0) {
-        user.experiences.forEach((exp, i) => {
-          expHTML += `
-            <div style="margin-left:15px; margin-top:5px; border-left:2px dashed #4a5568; padding-left:10px;">
-              <strong>Job #${i+1}: ${exp.company}</strong> (${exp.role})<br>
-              <span style="font-size:12px;" class="muted">Duration: ${exp.start} to ${exp.end}</span>
-            </div>
-          `;
-        });
-      } else {
-        expHTML = `<p class="muted" style="font-size:12px;">Profile details not submitted yet.</p>`;
-      }
-
-      block.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
-          <div>
-            <h4 style="margin:0; color:#fff;">${user.profile?.name || user.name || "Unknown Name"}</h4>
-            <p style="font-size:12px; margin:2px 0;" class="muted">Email: ${user.email} | Mobile: ${user.mobile}</p>
-            <p style="font-size:12px; margin:2px 0;">Status: <strong style="color:#ecc94b;">${user.verificationStatus || 'Unverified'}</strong></p>
-            ${expHTML}
-          </div>
-          <div style="margin-top:10px;">
-            <button class="btn approve-user-btn" data-uid="${user.id}" style="background:#10B981; font-size:12px; padding:6px 12px;" ${user.verificationStatus==='Verified'?'disabled style="opacity:0.5;"':''}>
-              ${user.verificationStatus==='Verified'?'Verified ✓':'Approve & Verify Credentials'}
-            </button>
-          </div>
-        </div>
-      `;
-
-      block.querySelector('.approve-user-btn')?.addEventListener('click', (e) => {
-        const uid = e.target.dataset.uid;
-        const allUsers = getStore('users');
-        const targetIdx = allUsers.findIndex(u => u.id === uid);
-        if (targetIdx >= 0) {
-          allUsers[targetIdx].verificationStatus = 'Verified';
-          setStore('users', allUsers);
-          alert("Candidate credentials verified!");
-          loadHRReviewPanel();
-        }
+  // ================= ADMIN BINDING =================
+  function bindAdmin() {
+    $('adminPanel')?.querySelectorAll('[data-admin-tab]')?.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.adminTab;
+        $('adminContent').innerHTML = `<h3>${target}</h3><p>Admin ${target} data...</p>`;
       });
-
-      listContainer.appendChild(block);
     });
   }
 
-  function render() {
-    const dashboard = $('dashboard');
-    if (!state.session) {
-      if (dashboard) dashboard.style.display = 'none';
-      return;
-    }
-    if (dashboard) {
-      dashboard.style.display = 'grid';
-      dashboard.classList.remove('hidden');
-    }
-    
-    buildNavForRole(state.session.role);
-    const mappedRole = getMappedRole(state.session.role);
-
-    if (mappedRole === 'candidate') {
-      showView('candidateProfile');
-
-      const currentStoredUser = getStore('users').find(u => u.id === state.session.userId);
-      const typeSelect = $('candidateTypeSelect');
-      
-      if (currentStoredUser) {
-        if (currentStoredUser.profile?.isFresher) {
-          if (typeSelect) typeSelect.value = 'fresher';
-          if ($('experienceFields')) $('experienceFields').style.display = 'none';
-        } else if (currentStoredUser.experiences?.length > 0) {
-          if (typeSelect) typeSelect.value = 'experienced';
-          if ($('experienceFields')) $('experienceFields').style.display = 'block';
-        }
-      }
-
-      // Sync active buttons on load
-      const isFresherMode = (typeSelect?.value === 'fresher');
-      if (isFresherMode || currentStoredUser?.verificationStatus === 'Verified') {
-        if ($('initWorkIdBtn')) {
-          $('initWorkIdBtn').disabled = false;
-          $('initWorkIdBtn').removeAttribute('disabled');
-          $('initWorkIdBtn').style.opacity = "1";
-          $('initWorkIdBtn').style.background = "#10B981";
-          $('initWorkIdBtn').style.color = "#fff";
-          $('initWorkIdBtn').style.cursor = "pointer";
-        }
-        if ($('profileMsg')) $('profileMsg').innerHTML = `<span style='color:#10B981;'>✓ Selection Mode: Fresher active hai. Niche 'Generate WorkID QR' par click karein!</span>`;
-      }
-    } else {
-      showView('hrVerify');
-      loadHRReviewPanel();
-    }
+  // ================= OTHER BINDINGS =================
+  function bindFeedback() {
+    $('feedbackBtn')?.addEventListener('click', () => {
+      if (!requireSession('candidate')) return;
+      alert('Feedback dispute submitted (demo)');
+    });
   }
 
   function bindLogout() {
     $('logoutBtn')?.addEventListener('click', () => {
       state.session = null;
+      currentOtp = null;
+      otpAuth = null;
       $('dashboard')?.classList.add('hidden');
-      if($('dashboard')) $('dashboard').style.display = 'none';
-      $('authMsg').textContent = 'Logged out safely.';
+      $('authMsg').textContent = 'Logged out.';
       showView('authLoginBox');
     });
   }
+
+  // ================= HELPERS =================
+  function requireSession(allowedRoles) {
+    if (!state.session) {
+      alert('Please login first.');
+      return false;
+    }
+    const mappedRole = getMappedRole(state.session.role);
+    if (allowedRoles && !allowedRoles.split(',').includes(mappedRole)) {
+      alert(`Access denied. Role: ${mappedRole}`);
+      return false;
+    }
+    return true;
+  }
+
+  function generateWorkId(country) {
+    const year = new Date().getFullYear();
+    state.seqByYear[year] = (state.seqByYear[year] || 0) + 1;
+    const seq = String(state.seqByYear[year]).padStart(6, '0');
+    return `WID-${country}-${year}-${seq}`;
+  }
+
+  function syncAdminData() {
+    try {
+      if (window.db && typeof window.db === 'object') {
+        localStorage.setItem('adminDb', JSON.stringify(window.db));
+      }
+    } catch (e) {
+      console.warn('Admin sync failed:', e);
+    }
+  }
+
+  // Export globals
+  window.getMappedRole = getMappedRole;
+  window.currentUser = () => currentUser();
 })();
