@@ -38,7 +38,6 @@
 /* ========================================== */
 /* REAL ULTRA-DARK MODE STRICT ENFORCEMENT     */
 /* ========================================== */
-/* Agar class lagne par bhi change na ho, toh is strict root mapping se bypass nahi ho sakta */
 html.dark, body.dark, .dark, [data-theme="dark"] {
   --bg: #0B0F19 !important;
   --card: #151B2C !important;
@@ -93,7 +92,6 @@ h1, h2, h3, h4, h5 {
   box-shadow: 0 4px 20px rgba(30, 64, 175, 0.2);
 }
 
-/* Dark Mode explicit Appbar adjust */
 html.dark .appbar, body.dark .appbar, .dark .appbar {
   background: linear-gradient(135deg, #151B2C 0%, #0B0F19 100%) !important;
   border-bottom: 1px solid var(--border) !important;
@@ -113,7 +111,6 @@ html.dark .appbar, body.dark .appbar, .dark .appbar {
   font-weight: 500;
 }
 
-/* Actions inside Bar Dropdowns */
 .actions select {
   width: auto;
   padding: 6px 12px;
@@ -324,10 +321,18 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   color: white !important;
 }
 
-.hidden { display: none !important; }
+/* ULTRA STRICT HIDDEN OVERRIDE ENGINE */
+.hidden { 
+  display: none !important; 
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
 
 @media (min-width: 768px) {
-  .grid-2, .dashboard {
+  /* .hidden check to make sure hidden container never catches display:grid */
+  .grid-2, .dashboard:not(.hidden) {
     display: grid !important;
     grid-template-columns: 260px 1fr;
     gap: 32px;
@@ -345,7 +350,7 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
 }
 
 .password-wrap input {
-  padding-right: 48px !important; /* Taaki text eye icon ke peeche na chhupay */
+  padding-right: 48px !important;
 }
 
 .eye-btn {
@@ -362,16 +367,15 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   outline: none;
 }
 
-/* Premium Dynamic SVG Eye Icon */
 .eye-icon {
   width: 22px;
   height: 22px;
-  color: #64748B; /* Default Muted Gray */
+  color: #64748B;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .eye-btn:hover .eye-icon {
-  color: #2563EB; /* Hover karne par Electric Royal Blue */
+  color: #2563EB;
   transform: scale(1.1);
 }
 
@@ -379,7 +383,7 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   color: #94A3B8;
 }
 .dark .eye-btn:hover .eye-icon {
-  color: #60A5FA; /* Dark mode hover glow */
+  color: #60A5FA;
 }
 
 /* ========================================== */
@@ -388,7 +392,7 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
 .btn-verify {
   width: 100%;
   margin-top: 12px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important; /* Emerald Success Gradient */
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
   color: white !important;
   border: none !important;
   font-family: 'Poppins', sans-serif;
@@ -396,7 +400,7 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   letter-spacing: 0.5px;
   text-transform: uppercase;
   font-size: 0.9rem;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important; /* Glowing Green Shadow */
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
@@ -411,7 +415,6 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   transform: translateY(1px);
 }
 
-/* Dark Mode adaptation for Verify Button */
 .dark .btn-verify {
   box-shadow: 0 4px 18px rgba(16, 185, 129, 0.2) !important;
 }
