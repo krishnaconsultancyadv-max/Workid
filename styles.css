@@ -22,344 +22,422 @@
   --text: #0F172A;            
   --text-muted: #64748B;      
   --card: #FFFFFF;
-  --border: #E2E8F0;          
-  
-  /* Design Radii */
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-  
-  /* Shadows Map */
-  --shadow-sm: 0 2px 4px rgba(148, 163, 184, 0.04);
-  --shadow-md: 0 10px 24px -4px rgba(148, 163, 184, 0.08), 0 4px 12px -4px rgba(148, 163, 184, 0.04);
-  --shadow-lg: 0 20px 32px -6px rgba(148, 163, 184, 0.12), 0 8px 16px -6px rgba(148, 163, 184, 0.04);
+  --border: #E2E8F0;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* DARK MODE CONFIGURATION INTERFACE */
+.dark {
+  --bg: #0B0F19;              
+  --text: #F8FAFC;            
+  --text-muted: #94A3B8;      
+  --card: #1E293B;            
+  --border: #334155;          
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
 }
 
 /* ========================================== */
-/* REAL ULTRA-DARK MODE STRICT ENFORCEMENT     */
+/* RESET & BASE DOCUMENT STRUCTURE            */
 /* ========================================== */
-html.dark, body.dark, .dark, [data-theme="dark"] {
-  --bg: #0B0F19 !important;
-  --card: #151B2C !important;
-  --border: #222B45 !important;
-  --text: #F1F5F9 !important;
-  --text-muted: #94A3B8 !important;
-  --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.3) !important;
-  --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
-  --shadow-lg: 0 20px 32px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Base Engine Rules */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-h1, h2, h3, h4, h5 {
-  font-family: 'Poppins', sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin-bottom: 12px;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--bg);
   color: var(--text);
-}
-
-.container {
-  max-width: 1240px;
-  margin: 40px auto;
-  padding: 0 24px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* ========================================== */
-/* PREMIUM NAVIGATION APPBAR (HEADER)         */
+/* AUTHENTICATION LAYOUT INTERFACE (CENTRAL)  */
 /* ========================================== */
-.appbar {
-  background: linear-gradient(135deg, #1E40AF 0%, #1D4ED8 100%) !important;
-  color: white !important;
-  padding: 16px 32px;
+.auth-wrapper {
+  min-height: 100vh;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(30, 64, 175, 0.2);
+  padding: 20px;
 }
 
-html.dark .appbar, body.dark .appbar, .dark .appbar {
-  background: linear-gradient(135deg, #151B2C 0%, #0B0F19 100%) !important;
-  border-bottom: 1px solid var(--border) !important;
-  box-shadow: none !important;
-}
-
-.logo {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: white !important;
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  font-size: 0.82rem;
-  color: #93C5FD !important;
-  font-weight: 500;
-}
-
-.actions select {
-  width: auto;
-  padding: 6px 12px;
-  font-size: 0.88rem;
-  background: rgba(255, 255, 255, 0.15) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
-  border-radius: var(--radius-sm);
-}
-
-.actions select option {
-  background: #1E293B !important;
-  color: white !important;
-}
-
-/* ========================================== */
-/* STYLISH TRANSITIONAL CARDS CONTROLLERS     */
-/* ========================================== */
-.card {
-  background-color: var(--card) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-md) !important;
-  padding: 24px;
-  margin-bottom: 24px;
-  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.3s ease;
-}
-
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg) !important;
-}
-
-.grid, .form-grid {
-  display: grid;
-  gap: 18px;
-}
-.grid { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.form-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); margin-bottom: 18px; }
-
-/* ========================================== */
-/* DYNAMIC INTERFACE INPUT CONTROLS           */
-/* ========================================== */
-input, select, textarea {
+.auth-container {
   width: 100%;
-  padding: 12px 16px;
-  background-color: var(--card) !important;
-  color: var(--text) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-md) !important;
-  font-family: inherit;
-  font-size: 0.95rem;
-  box-sizing: border-box;
-  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  max-width: 480px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 40px 32px;
+  box-shadow: var(--shadow-lg);
 }
 
-input:focus, select:focus, textarea:focus {
-  border-color: var(--accent) !important;
-  box-shadow: 0 0 0 4px var(--accent-glow) !important;
-  outline: none;
+/* TAB MECHANICS CONTROLLER SCENE */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  padding: 12px 0;
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  user-select: none;
+}
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ========================================== */
+/* STRUCTURAL LAYOUT ELEMENTS & UTILITIES     */
+/* ========================================== */
+.hidden {
+  display: none !important;
+}
+
+.form-group {
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
-  margin-bottom: 8px;
-  font-size: 0.88rem;
   font-weight: 600;
-  color: var(--text-muted) !important;
+  font-size: 14px;
+  margin-bottom: 6px;
+  color: var(--text);
 }
 
-.readonly-box {
-  background-color: var(--bg) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-md);
-  padding: 12px 16px;
-  color: var(--text) !important;
-}
-
-.auth-tabs {
-  border-bottom: 1px solid var(--border) !important;
-  padding-bottom: 14px;
-  margin-bottom: 20px;
-  display: flex;
-  gap: 10px;
-}
-
-/* ========================================== */
-/* ELITE HIGH-END WORKID CARD SHIELD         */
-/* ========================================== */
-.wid-card {
-  background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  max-width: 430px;
-  margin: 16px auto;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.wid-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
+.input, select, textarea {
   width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, #1E40AF, #3B82F6, #10B981);
+  padding: 11px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
 }
 
-.wid-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  border-bottom: 1px dashed var(--border) !important;
-  padding-bottom: 16px;
-  margin-bottom: 18px;
+.input:focus, select:focus, textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
 }
-
-.wid-photo {
-  width: 80px;
-  height: 80px;
-  border-radius: var(--radius-md);
-  object-fit: cover;
-  background: #E2E8F0;
-  border: 3px solid var(--card);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.wid-meta h3 {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text) !important;
-}
-html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 { 
-  color: #60A5FA !important; 
-}
-
-.id-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.92rem; }
-.id-label { color: var(--text-muted); }
-.id-value { font-weight: 600; color: var(--text); }
 
 /* ========================================== */
-/* ACTION BUTTONS & STREAM LIST COMPONENT     */
+/* BUTTON INTERACTIONS & FEEDBACK STATE       */
 /* ========================================== */
 .btn {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) !important;
-  color: white !important;
-  padding: 12px 24px;
-  border: none;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-weight: 600;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  box-shadow: 0 4px 14px var(--accent-glow);
+  width: 100%;
+  padding: 12px 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FFFFFF;
+  background-color: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  text-align: center;
 }
-.btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+.btn:hover {
+  background-color: #1D4ED8;
+}
+
+.btn.small {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
 
 .btn-outline {
-  background: transparent !important;
-  border: 1px solid var(--border) !important;
-  color: var(--text) !important;
-  padding: 12px 24px;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-outline:hover { background: rgba(148, 163, 184, 0.08) !important; }
-
-.badge {
-  display: inline-block;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--success-glow) !important;
-  color: var(--success) !important;
-  font-size: 0.78rem;
-  font-weight: 700;
-  border: 1px solid rgba(16, 185, 129, 0.2) !important;
-}
-
-.badge.danger {
-  background: var(--danger-glow) !important;
-  color: var(--danger) !important;
-  border-color: rgba(239, 68, 68, 0.15) !important;
-}
-
-.sidebar li {
-  padding: 14px 18px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--text-muted);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-  transition: all 0.25s ease;
-}
-.sidebar li:hover { background: rgba(37, 99, 235, 0.05); color: var(--accent); }
-.sidebar li.active {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%) !important;
-  color: white !important;
-}
-
-/* ULTRA STRICT HIDDEN OVERRIDE ENGINE */
-.hidden { 
-  display: none !important; 
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  overflow: hidden !important;
+  justify-content: center;
+  width: 100%;
+  padding: 11px 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background-color: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
 }
 
-@media (min-width: 768px) {
-  /* .hidden check to make sure hidden container never catches display:grid */
-  .grid-2, .dashboard:not(.hidden) {
-    display: grid !important;
-    grid-template-columns: 260px 1fr;
-    gap: 32px;
+.btn-outline:hover {
+  background-color: var(--bg);
+}
+
+.btn-outline.small {
+  width: auto;
+  padding: 5px 12px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+
+/* ========================================== */
+/* REALTIME LOGGED-IN SYSTEM ARCHITECTURE      */
+/* ========================================== */
+/* ABSOLUTE SECURITY RESET: Dashboard hidden completely on boot stage */
+#dashboard {
+  display: none; 
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* SIDE NAVIGATION BAR SYSTEM LAYOUT */
+aside {
+  background-color: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-area {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--accent);
+  margin-bottom: 40px;
+}
+
+.nav-links {
+  list-style: none;
+  flex: 1;
+}
+
+.nav-links li {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-bottom: 6px;
+  text-transform: capitalize;
+}
+
+.nav-links li:hover {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+.nav-links li.active {
+  background-color: var(--primary-glow);
+  color: var(--accent);
+}
+
+/* MAIN PANEL WORKSPACE LAYER */
+main {
+  padding: 40px;
+  overflow-y: auto;
+}
+
+.content {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ========================================== */
+/* REALTIME DYNAMIC UI WORKID VIRTUAL CARD     */
+/* ========================================== */
+.wid-card-canvas {
+  width: 100%;
+  max-width: 380px;
+  background: linear-gradient(135deg, #1E3A8A 0%, #0F172A 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: #FFFFFF;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+  position: relative;
+  overflow: hidden;
+  margin: 20px 0;
+}
+
+.wid-card-canvas::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -30%;
+  width: 300px;
+  height: 300px;
+  background: rgba(37, 99, 235, 0.15);
+  border-radius: 50%;
+  filter: blur(40px);
+}
+
+.card-brand {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  margin-bottom: 32px;
+}
+
+.card-number {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 20px;
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  font-weight: bold;
+}
+
+.card-holder {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #94A3B8;
+}
+
+.card-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.card-status-badge {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 50px;
+  text-transform: uppercase;
+}
+
+.qr-placeholder {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  width: 64px;
+  height: 64px;
+  background-color: #FFFFFF;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+/* ========================================== */
+/* MISCELLANEOUS COMPONENTS & BOX MODEL TYPES */
+/* ========================================== */
+.readonly-box {
+  background-color: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.hr-job-post {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background-color: var(--bg);
+}
+
+.item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background-color: var(--card);
+}
+
+/* ========================================== */
+/* RESPONSIVE FLUID MEDIA VIEWPORT BREAKPOINTS*/
+/* ========================================== */
+@media (max-width: 960px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  aside {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 20px;
+  }
+  main {
+    padding: 20px;
   }
 }
 
 /* ========================================== */
-/* STYLISH PASSWORD EYE OVERLAY ENGINE        */
+/* SECURE REALTIME LIVE MESSAGE SYSTEM        */
 /* ========================================== */
-.password-wrap {
+#hrChatMessages {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 8px;
+  background-color: var(--bg);
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+#hrChatMessages div {
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border);
+}
+
+/* ========================================== */
+/* SECURE PASSWORD FIELD EXTRA LAYER DESIGNS  */
+/* ========================================== */
+.password-container {
   position: relative;
   display: flex;
   align-items: center;
-  width: 100%;
 }
 
-.password-wrap input {
-  padding-right: 48px !important;
+.password-container .input {
+  padding-right: 48px;
 }
 
 .eye-btn {
   position: absolute;
-  right: 14px;
-  background: transparent !important;
-  border: none !important;
+  right: 12px;
+  background: transparent;
+  border: none;
   cursor: pointer;
-  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -367,15 +445,16 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   outline: none;
 }
 
+/* Premium Dynamic SVG Eye Icon */
 .eye-icon {
   width: 22px;
   height: 22px;
-  color: #64748B;
+  color: #64748B; /* Default Muted Gray */
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .eye-btn:hover .eye-icon {
-  color: #2563EB;
+  color: #2563EB; /* Hover karne par Electric Royal Blue */
   transform: scale(1.1);
 }
 
@@ -383,7 +462,7 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
   color: #94A3B8;
 }
 .dark .eye-btn:hover .eye-icon {
-  color: #60A5FA;
+  color: #60A5FA; /* Dark mode hover glow */
 }
 
 /* ========================================== */
@@ -392,29 +471,23 @@ html.dark .wid-meta h3, body.dark .wid-meta h3, .dark .wid-meta h3 {
 .btn-verify {
   width: 100%;
   margin-top: 12px;
-  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important; /* Emerald Success Gradient */
   color: white !important;
   border: none !important;
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
-  cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.btn-verify:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
-  filter: brightness(1.1);
-}
-
-.btn-verify:active {
-  transform: translateY(1px);
-}
-
-.dark .btn-verify {
-  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.2) !important;
+/* Entrepreneur Help Text Layer Styles */
+#entHelp {
+  padding: 10px 14px;
+  background-color: var(--primary-glow);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 16px;
+  line-height: 1.4;
 }
