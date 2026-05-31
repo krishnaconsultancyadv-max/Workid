@@ -2,11 +2,13 @@
 (function(){
   'use strict';
   
-  // ================= GLOBALS =================
+  // ==========================================
+  // GLOBALS & STATE INITIALIZATION LAYER
+  // ==========================================
   const $ = (id) => document.getElementById(id);
   
   const state = {
-    session: null, // {role, userId, email, mobile}
+    session: null, // Holds session schema: {role, userId, email, mobile}
     seqByYear: {}
   };
   
@@ -14,9 +16,12 @@
   let currentEmailOtp = null;
   let otpAuth = null;
 
+  // Global Geographic Constraints Engine Mapping
   const AVAILABLE_LOCATIONS = ["Sagar", "Bhopal", "Indore", "Jabalpur", "Delhi", "Mumbai", "Remote"];
 
-  // ================= ROLE MAPPING =================
+  // ==========================================
+  // SYSTEM ARCHITECTURE ROLE MAPPING ENGINE
+  // ==========================================
   function getMappedRole(role) {
     const roleMap = {
       'superadmin': 'superadmin',
@@ -30,9 +35,14 @@
     return roleMap[role] || role;
   }
 
-  // ================= BOOT =================
+  // ==========================================
+  // APPLICATION INITIAL BOOT SYSTEM (DOM LOAD)
+  // ==========================================
   document.addEventListener('DOMContentLoaded', () => {
+    // Timeout buffer layer to secure data integrity
     setTimeout(syncAdminData, 100);
+    
+    // Core Handlers Binding Iteration
     bindAuth();
     bindTheme();
     bindNav();
@@ -42,10 +52,18 @@
     bindFeedback();
     bindLogout();
     bindPasswordToggle();
+    
+    // 🚀 Initialization of Entrepreneur dynamic fields visibility controller
+    setupEntrepreneurToggle(); 
+    
+    // Initial Render Layer Call
     render();
     setupOtpUiFields(); 
   });
 
+  // ==========================================
+  // DUAL OTP VERIFICATION DYNAMIC UI BUILDER
+  // ==========================================
   function setupOtpUiFields() {
     const otpInput = $('otpInput');
     if (otpInput && !$('emailOtpInput')) {
@@ -62,7 +80,9 @@
     }
   }
 
-  // ================= PASSWORD TOGGLE =================
+  // ==========================================
+  // SECURE CRYPTO CRYPT-PASS INTERACTION TOGGLE
+  // ==========================================
   function bindPasswordToggle() {
     const passInput = $('loginPass');
     const toggleBtn = $('togglePass');
@@ -81,7 +101,9 @@
     });
   }
 
-  // ================= THEME =================
+  // ==========================================
+  // CORE THEME ENGINE CONFIGURATION (DARK/LIGHT)
+  // ==========================================
   function bindTheme() {
     const select = $('themeSelect');
     if (!select) return;
@@ -90,7 +112,9 @@
     });
   }
 
-  // ================= AUTH SYSTEM (STRICT UPDATE) =================
+  // ==========================================
+  // SECURITY & IDENTITY AUTHENTICATION WORKFLOWS
+  // ==========================================
   function bindAuth() {
     const sendOtpBtn = $('sendOtpBtn');
     const verifyOtpBtn = $('verifyOtpBtn');
@@ -98,6 +122,7 @@
     const forgotBtn = $('forgotBtn');
     const resetPasswordBtn = $('resetPasswordBtn');
 
+    // 1. Password Verification Framework (Pre-OTP Verification Phase)
     if (passwordLoginBtn) {
       passwordLoginBtn.addEventListener('click', () => {
         const role = $('roleSelect')?.value || 'candidate';
@@ -123,11 +148,17 @@
           return;
         }
         
+        if (user.password !== pass) {
+          msgEl.textContent = '❌ Invalid credentials password.';
+          return;
+        }
+        
         state.session = { ...auth, userId: user.id, passwordOk: true };
         msgEl.textContent = 'Password accepted. Ab "Send OTP" par click karein.';
       });
     }
 
+    // 2. OTP Dispatch Trigger Management Module
     if (sendOtpBtn) {
       sendOtpBtn.addEventListener('click', () => {
         const role = $('roleSelect')?.value || 'candidate';
@@ -153,6 +184,7 @@
       });
     }
 
+    // 3. Double Verification Verification Gate Engine
     if (verifyOtpBtn) {
       verifyOtpBtn.addEventListener('click', () => {
         const givenMobileOtp = $('otpInput')?.value.trim();
@@ -195,6 +227,7 @@
       });
     }
 
+    // 4. Credential Recovery Strategy Pipeline
     if (forgotBtn) {
       forgotBtn.addEventListener('click', () => {
         const email = $('fpEmail')?.value.trim();
@@ -226,6 +259,7 @@
       });
     }
 
+    // 5. Hard Password Reset Overwrite Matrix
     if (resetPasswordBtn) {
       resetPasswordBtn.addEventListener('click', () => {
         const otp = $('resetOtpInput')?.value.trim();
@@ -258,7 +292,9 @@
       });
     }
 
-    // TABS
+    // ==========================================
+    // TAB MECHANICS LAYER & SECURITY VIEW ENGINE
+    // ==========================================
     const tabs = ['tabLogin', 'tabSignup', 'tabForgot'];
     const boxes = ['authLoginBox', 'authSignupBox', 'authForgotBox'];
     tabs.forEach((tabId, i) => {
@@ -267,10 +303,28 @@
         boxes.forEach(b => $(b)?.classList.add('hidden'));
         $(tabId).classList.add('active');
         $(boxes[i])?.classList.remove('hidden');
+
+        // Dynamic Extra Field Protection Switch Inside Tab Interface System
+        if (tabId === 'tabSignup') {
+          const roleSelect = $('suRole');
+          if (roleSelect && roleSelect.value === 'entrepreneur') {
+            $('entSection')?.classList.remove('hidden');
+            $('entHelp')?.classList.remove('hidden');
+          } else {
+            $('entSection')?.classList.add('hidden');
+            $('entHelp')?.classList.add('hidden');
+          }
+        } else {
+          // Force and assert hidden states for specialized dynamic containers on non-signup views
+          $('entSection')?.classList.add('hidden');
+          $('entHelp')?.classList.add('hidden');
+        }
       });
     });
 
-    // 🚀 SIGNUP LOGIC FIXED (STRICT SYSTEM-WIDE DUPLICATION CHECK)
+    // ==========================================
+    // SIGNUP HANDLER WITH DUPLICATION SYSTEM FIREWALL
+    // ==========================================
     $('signupBtn')?.addEventListener('click', () => {
       const role = $('suRole')?.value || 'candidate';
       const name = $('suName')?.value.trim();
@@ -286,31 +340,50 @@
       
       const users = getStore('users');
       
-      // 1. Check if Email already exists anywhere in the system
+      // Verification Firewall: System-Wide Email Isolation Check
       const emailExists = users.find(u => u.email === email);
       if (emailExists) {
-        msgEl.textContent = `❌ Yeh Email ID (${email}) pehle से सिस्टम में रजिस्टर्ड है!`;
+        msgEl.textContent = `❌ Yeh Email ID (${email}) pehle से सिस्टम में रजिस्टर्ड hai!`;
         return;
       }
 
-      // 2. Check if Mobile number already exists anywhere in the system
+      // Verification Firewall: System-Wide Mobile Isolation Check
       const mobileExists = users.find(u => u.mobile === mob);
       if (mobileExists) {
-        msgEl.textContent = `❌ Yeh Mobile Number (${mob}) pehle से सिस्टम में रजिस्टर्ड है!`;
+        msgEl.textContent = `❌ Yeh Mobile Number (${mob}) pehle से सिस्टम में रजिस्टर्ड hai!`;
         return;
       }
       
-      // Agar dono unique hain, tabhi entry generate hogi
+      // Creating standard sandbox registration node
       const auth = { role, email, mobile: mob };
       const user = createUser(auth);
       user.profile.name = name;
       user.password = p1; 
+
+      // Deep Extract Layer for specialized multi-dimensional Entrepreneur Profiles
+      if (role === 'entrepreneur') {
+        user.businessName = $('entBusinessName')?.value.trim();
+        user.gst = $('entGst')?.value.trim();
+        user.category = $('entBusinessCategory')?.value;
+        user.size = $('entBusinessSize')?.value;
+        user.regType = $('entRegType')?.value;
+        user.regNo = $('entRegNumber')?.value.trim();
+        user.address = $('entAddress')?.value.trim();
+        user.city = $('entCity')?.value.trim();
+        user.state = $('entState')?.value.trim();
+        user.pin = $('entPin')?.value.trim();
+        user.domainEmail = $('entDomainEmail')?.value.trim();
+        user.turnover = $('entTurnover')?.value;
+      }
+
       saveUser(user);
       msgEl.textContent = '✅ Account created successfully! Ab Login kariye.';
     });
   }
 
-  // ================= STORAGE HELPERS =================
+  // ==========================================
+  // CORE STORAGE ABSTRACTED PERSISTENCE ENGINES
+  // ==========================================
   function getStore(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; } }
   function setStore(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
   function generateOtp() { return Math.floor(100000 + Math.random() * 900000).toString(); }
@@ -318,6 +391,23 @@
   function getUserByEmailMobileAndRole(auth) {
     const users = getStore('users');
     return users.find(u => u.email === auth.email && u.mobile === auth.mobile && u.role === auth.role) || null;
+  }
+
+  // Seeding System Core Superuser Credentials Nodes
+  function syncAdminData() {
+    let users = getStore('users');
+    if (!users.some(u => u.role === 'superadmin')) {
+      users.push({
+        id: 'usr_super',
+        role: 'superadmin',
+        email: 'superadmin@workid.in',
+        mobile: '9999999999',
+        password: 'Password@123',
+        profile: { name: 'System Super Admin', status: 'Verified' },
+        workId: 'WID-IN-2026-000001'
+      });
+      setStore('users', users);
+    }
   }
 
   function createUser(auth) {
@@ -350,7 +440,9 @@
     return users.find(u => u.id === state.session.userId) || null;
   }
 
-  // ================= NAVIGATION =================
+  // ==========================================
+  // VIEW ROUTING INTERACTION SYSTEM (ROUTER)
+  // ==========================================
   function bindNav() {
     $('navList')?.addEventListener('click', (e) => {
       const li = e.target.closest('li[data-view]');
@@ -359,6 +451,7 @@
         if (li.dataset.view === 'workIdCard') updateWorkIdCardUI();
         if (li.dataset.view === 'candidateProfile') renderCandidateDashboardLive();
         if (li.dataset.view === 'hrPanelTools') renderHRReqListsLive();
+        if (li.dataset.view === 'adminPanel') renderAdminPanelLive();
       }
     });
   }
@@ -378,7 +471,7 @@
         nav.appendChild(navItem(id, id.replace(/([A-Z])/g, ' $1').toLowerCase()));
       });
     } else {
-      nav.appendChild(navItem('adminPanel', 'Admin'));
+      nav.appendChild(navItem('adminPanel', 'administrative terminal core'));
     }
   }
 
@@ -390,9 +483,15 @@
   function showView(id) {
     document.querySelectorAll('.content > *').forEach(el => el.classList.add('hidden'));
     $(id)?.classList.remove('hidden');
+    
+    document.querySelectorAll('#navList li').forEach(l => l.classList.remove('active'));
+    const activeLi = document.querySelector(`#navList li[data-view="${id}"]`);
+    if (activeLi) activeLi.classList.add('active');
   }
 
-  // ================= LIVE UI RE-RENDERERS =================
+  // ==========================================
+  // REALTIME SYNCHRONIZED INTERFACE RENDERERS
+  // ==========================================
   function updateWorkIdCardUI() {
     const user = currentUser();
     if (!user || !user.workId) return;
@@ -484,13 +583,17 @@
     const apps = getStore('job_applications');
     if (apps.find(a => a.jobId === jobId && a.candidateId === user.id)) return;
 
+    const jobs = getStore('posted_jobs');
+    const matchingJob = jobs.find(j => j.id === jobId);
+
     apps.push({
       id: 'app_' + Date.now(),
       jobId: jobId,
       candidateId: user.id,
-      workId: user.workId,
-      name: user.profile.name || user.email,
-      status: 'Applied'
+      workId: user.workId || 'Pending ID',
+      name: user.profile?.name || user.email,
+      status: 'Applied',
+      company: matchingJob ? matchingJob.company : 'Enterprise Platform'
     });
     setStore('job_applications', apps);
     alert('✅ Job Application Submitted Successfully!');
@@ -575,7 +678,45 @@
     chatBox.innerHTML = chats.map(c => `<div><strong>${c.sender}:</strong> ${c.text} <small class="muted">(${c.time})</small></div>`).join('');
   }
 
-  // ================= CANDIDATE OPERATIONS =================
+  // ==========================================
+  // MASTER ADMINISTRATIVE INTERFACE CORE TERMINAL
+  // ==========================================
+  function renderAdminPanelLive() {
+    const container = $('adminPanel');
+    if (!container) return;
+    
+    const users = getStore('users');
+    const loggedAdmin = state.session || { role: 'admin' };
+    
+    let html = `
+      <h3>👑 Administrative Control Core (${loggedAdmin.role.toUpperCase()})</h3>
+      <div class="grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom:20px;">
+        <div class="readonly-box" style="padding:15px; background:rgba(255,255,255,0.05); border-radius:6px;">
+          <strong>Total Managed Users:</strong> ${users.length}
+        </div>
+        <div class="readonly-box" style="padding:15px; background:rgba(255,255,255,0.05); border-radius:6px;">
+          <strong>System Status:</strong> Active Node
+        </div>
+      </div>
+      <h4>📋 System Node User Directory</h4>
+      <div style="max-height:300px; overflow-y:auto; border:1px solid #374151; padding:10px; border-radius:6px; background:rgba(0,0,0,0.2);">
+    `;
+    
+    users.forEach(u => {
+      html += `
+        <div style="padding:6px; border-bottom:1px solid #1f2937; font-size:13px;">
+          • <strong>${u.profile?.name || 'No Name'}</strong> (${u.email}) - Role: <code style="color:#34d399;">${u.role}</code> | WorkID: <code>${u.workId || 'None'}</code>
+        </div>
+      `;
+    });
+    
+    html += `</div>`;
+    container.innerHTML = html;
+  }
+
+  // ==========================================
+  // CANDIDATE OPERATIONAL MUTATION METHODS
+  // ==========================================
   function bindCandidate() {
     $('saveProfileBtn')?.addEventListener('click', () => {
       if (!requireSession('candidate')) return;
@@ -595,7 +736,7 @@
         status: oldStatus
       };
       saveUser(user);
-      $('profileMsg').textContent = 'Profile saved!';
+      if ($('profileMsg')) $('profileMsg').textContent = 'Profile saved successfully!';
       renderCandidateDashboardLive();
     });
 
@@ -614,7 +755,9 @@
     });
   }
 
-  // ================= HR & ENTREPRENEUR OPERATIONAL LOGIC =================
+  // ==========================================
+  // ENTERPRISE MANAGEMENT OPERATIONAL SUBSYSTEMS
+  // ==========================================
   function bindHR() {
     $('hrConfirmJoiningBtn')?.addEventListener('click', () => {
       if (!requireSession('hr,entrepreneur')) return;
@@ -643,11 +786,13 @@
       if (!requireSession('hr,entrepreneur')) return;
       const jobs = getStore('posted_jobs');
       const selectedJobLocation = $('hrJobLocationDropdown')?.value || 'Remote';
+      
+      const hrHiringManagerInput = $('hrHiringManager') || { value: 'Active Partner Enterprise' };
 
       jobs.push({
         id: 'job_' + Date.now(),
-        title: $('hrJobTitle')?.value.trim(),
-        company: HornHiringManager?.value || 'Active Partner Enterprise',
+        title: $('hrJobTitle')?.value.trim() || 'Software Engineer Node',
+        company: hrHiringManagerInput.value || 'Active Partner Enterprise',
         location: selectedJobLocation,
         salary: $('hrSalaryRange')?.value || 'Negotiable',
         exp: $('hrExpRange')?.value || 'Any'
@@ -745,7 +890,31 @@
 
   function bindAdmin() {}
   function bindFeedback() {}
+
+  // ==========================================
+  // 🚀 ENTREPRENEUR EXTRA FIELDS CONTROLLER ENGINE
+  // ==========================================
+  function setupEntrepreneurToggle() {
+    const roleSelect = $('suRole'); 
+    const entSection = $('entSection');
+    const entHelp = $('entHelp');
+
+    if (roleSelect && entSection) {
+      roleSelect.addEventListener('change', function() {
+        if (this.value === 'entrepreneur') {
+          entSection.classList.remove('hidden');
+          if (entHelp) entHelp.classList.remove('hidden');
+        } else {
+          entSection.classList.add('hidden');
+          if (entHelp) entHelp.classList.add('hidden');
+        }
+      });
+    }
+  }
   
+  // ==========================================
+  // SYSTEM SESSION DESTRUCTION ENGINE (LOGOUT)
+  // ==========================================
   function bindLogout() {
     $('logoutBtn')?.addEventListener('click', () => {
       state.session = null; currentMobileOtp = null; currentEmailOtp = null; otpAuth = null;
@@ -767,6 +936,9 @@
     return `WID-${country}-${year}-${String(state.seqByYear[year]).padStart(6, '0')}`;
   }
 
+  // ==========================================
+  // MASTER INTERFACE STATE SYNCHRONIZATION LAYERS
+  // ==========================================
   function render() {
     const d = $('dashboard');
     if (!state.session) { if(d) d.style.display = 'none'; return; }
@@ -785,8 +957,7 @@
 
     if (mappedRole === 'candidate') { showView('candidateProfile'); renderCandidateDashboardLive(); }
     else if (mappedRole === 'hr') { showView('hrPanelTools'); renderHRReqListsLive(); }
-    else showView('adminPanel');
+    else { showView('adminPanel'); renderAdminPanelLive(); }
   }
 
-  function syncAdminData() {}
 })();
